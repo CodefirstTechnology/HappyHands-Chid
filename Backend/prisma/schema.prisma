@@ -1,0 +1,297 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VerificationStatus {
+  PENDING
+  UNDER_REVIEW
+  VERIFIED
+  REJECTED
+}
+
+enum ServantRegistrationSource {
+  AGENT
+  SELF
+}
+
+enum BookingType {
+  MONTHLY
+  SESSION
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  REJECTED
+  EXPIRED
+  OTP_PENDING
+  ARRIVED
+}
+
+model Role {
+  id        Int      @id
+  code      String   @unique
+  label     String
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("roles")
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  phone         String?        @unique
+  password      String
+  roleId        Int            @default(4)
+  role          Role           @relation(fields: [roleId], references: [id])
+  isActive           Boolean        @default(true)
+  agentSetPassword   Boolean        @default(false)
+  fcmToken           String?
+  preferredLanguage  String         @default("en")
+  createdAt          DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  houseOwner    HouseOwner?
+  servant       Servant?
+  agent         Agent?
+  refreshTokens RefreshToken[]
+  notifications Notification[]
+
+  @@index([roleId])
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model HouseOwner {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address   String?
+  flatNo    String?
+  building  String?
+  area      String?
+  city      String?
+  latitude  Float?
+  longitude Float?
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Servant {
+  id                 Int                @id @default(autoincrement())
+  userId             Int                @unique
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agentId            Int?
+  agent              Agent?             @relation(fields: [agentId], references: [id])
+  registrationSource ServantRegistrationSource @default(AGENT)
+  verificationStatus VerificationStatus @default(PENDING)
+  verifiedAt         DateTime?
+  rejectionReason    String?
+  profilePhoto       String?
+  idProofUrl         String?
+  idProofType        String?
+  skills             ServantSkill[]
+  experience         Int?
+  hourlyRate         Float?
+  monthlyRate        Float?
+  bio                String?
+  rating             Float              @default(0)
+  totalRatings       Int                @default(0)
+  availableFrom      String?
+  availableTo        String?
+  workingDays        String?
+  offersSession      Boolean            @default(true)
+  offersMonthly      Boolean            @default(true)
+  weekOffDays        String?
+  hoursPerDay        Float?
+  availabilityNotes  String?
+  address            String?
+  city               String?
+  latitude           Float?
+  longitude          Float?
+  bankAccountHolder  String?
+  bankAccountNumber  String?
+  bankName           String?
+  bankIfsc           String?
+  bankUpiId          String?
+  aadhaarVerified          Boolean   @default(false)
+  aadhaarVerificationType  String?
+  aadhaarVerifiedAt        DateTime?
+  aadhaarVerifiedName      String?
+  aadhaarVerifiedDob       String?
+  aadhaarVerifiedGender    String?
+  aadhaarVerifiedAddress   String?
+  aadhaarPhotoUrl          String?
+  aadhaarReferenceId       String?
+  aadhaarNameMatch         Boolean?
+  phoneVerified            Boolean   @default(false)
+  bookings           Booking[]
+  timeEntries        TimeEntry[]
+  zones              Zone[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model Zone {
+  id          Int      @id @default(autoincrement())
+  servantId   Int
+  servant     Servant  @relation(fields: [servantId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  city        String?
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([servantId])
+  @@index([name])
+  @@index([city])
+}
+
+model ServantSkill {
+  id        Int     @id @default(autoincrement())
+  servantId Int
+  servant   Servant @relation(fields: [servantId], references: [id], onDelete: Cascade)
+  skillName String
+}
+
+model Skill {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  label     String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+}
+
+model Agent {
+  id              Int       @id @default(autoincrement())
+  userId          Int       @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agencyName      String?
+  address         String?
+  city            String?
+  latitude        Float?
+  longitude       Float?
+  serviceRadiusKm Float     @default(3)
+  servants        Servant[]
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Booking {
+  id               Int           @id @default(autoincrement())
+  houseOwnerId     Int
+  houseOwner       HouseOwner    @relation(fields: [houseOwnerId], references: [id])
+  servantId        Int?
+  servant          Servant?      @relation(fields: [servantId], references: [id])
+  bookingType      BookingType
+  status           BookingStatus @default(PENDING)
+  requestedSkill   String?
+
+  monthlyStartDate DateTime?
+  monthlyEndDate   DateTime?
+  hoursPerDay      Float?
+  workingDays      String?
+
+  sessionDate      DateTime?
+  sessionStartTime String?
+  sessionEndTime   String?
+  sessionHours     Float?
+  sessionSlots     String?
+
+  address          String?
+  flatNo           String?
+  building         String?
+  area             String?
+  latitude         Float?
+  longitude        Float?
+  servantLatitude  Float?
+  servantLongitude Float?
+  servantLocationAt DateTime?
+  totalAmount      Float?
+  isPaid           Boolean       @default(false)
+  paymentId        String?
+  notes            String?
+
+  timeEntries      TimeEntry[]
+  review           Review?
+  workStartedAt    DateTime?
+  workStartOtps    BookingWorkStartOtp[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model BookingWorkStartOtp {
+  id         Int       @id @default(autoincrement())
+  bookingId  Int
+  booking    Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  code       String
+  otpHash    String
+  expiresAt  DateTime
+  sentAt     DateTime  @default(now())
+  attempts   Int       @default(0)
+  verifiedAt DateTime?
+  used       Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([bookingId, verifiedAt])
+}
+
+model TimeEntry {
+  id          Int       @id @default(autoincrement())
+  bookingId   Int
+  booking     Booking   @relation(fields: [bookingId], references: [id])
+  servantId   Int
+  servant     Servant   @relation(fields: [servantId], references: [id])
+  clockIn     DateTime
+  clockOut    DateTime?
+  hoursWorked Float?
+  date        DateTime
+  createdAt   DateTime  @default(now())
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  bookingId Int      @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  rating    Float
+  comment   String?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String
+  type      String
+  isRead    Boolean  @default(false)
+  data      Json?
+  createdAt DateTime @default(now())
+}
