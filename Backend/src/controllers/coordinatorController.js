@@ -709,28 +709,46 @@ exports.getStats = async (req, res) => {
 };
 
 exports.updateProfile = async (req, res) => {
-  const coordinator = await prisma.coordinator.findUnique({
-    where: { userId: req.user.id }
-  });
-  if (!coordinator) {
-    throw new ApiError(404, "Coordinator profile not found. Contact support to link your agency.");
-  }
-
   const { agencyName, address, city, latitude, longitude, serviceRadiusKm } = req.body;
 
-  const updated = await prisma.coordinator.update({
-    where: { id: coordinator.id },
-    data: {
-      ...(agencyName !== undefined && { agencyName: agencyName?.trim() || null }),
-      address: address.trim(),
-      city: city?.trim() || null,
-      latitude: parseFloat(latitude),
-      longitude: parseFloat(longitude),
-      ...(serviceRadiusKm !== undefined && {
-        serviceRadiusKm: parseFloat(serviceRadiusKm)
-      })
-    }
+  let coordinator = await prisma.coordinator.findUnique({
+    where: { userId: req.user.id }
   });
+
+  if (!coordinator) {
+    const role = getRoleCode(req.user);
+    if (role !== "COORDINATOR") {
+      throw new ApiError(404, "Coordinator profile not found. Contact support to link your agency.");
+    }
+    coordinator = await prisma.coordinator.create({
+      data: {
+        userId: req.user.id,
+        agencyName: agencyName?.trim() || null,
+        address: address.trim(),
+        city: city?.trim() || null,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        serviceRadiusKm:
+          serviceRadiusKm != null && serviceRadiusKm !== ""
+            ? parseFloat(serviceRadiusKm)
+            : 3
+      }
+    });
+  } else {
+    coordinator = await prisma.coordinator.update({
+      where: { id: coordinator.id },
+      data: {
+        ...(agencyName !== undefined && { agencyName: agencyName?.trim() || null }),
+        address: address.trim(),
+        city: city?.trim() || null,
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        ...(serviceRadiusKm !== undefined && {
+          serviceRadiusKm: parseFloat(serviceRadiusKm)
+        })
+      }
+    });
+  }
 
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
@@ -742,7 +760,7 @@ exports.updateProfile = async (req, res) => {
     }
   });
 
-  sendSuccess(res, { coordinator: updated, user: serializeUser(user) });
+  sendSuccess(res, { coordinator, user: serializeUser(user) });
 };
 
 const getScopedCaregiver = async (scope, caregiverId) => {

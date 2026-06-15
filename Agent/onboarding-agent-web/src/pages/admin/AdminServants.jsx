@@ -114,7 +114,7 @@ export default function AdminServants() {
                         {s.verificationStatus === 'VERIFIED' && <VerifiedBadge />}
                       </div>
                       <p className="text-sm text-on-surface-variant">
-                        Agent: {s.agent?.user?.name || 'Unassigned'}
+                        Coordinator: {s.coordinator?.user?.name || 'Unassigned'}
                       </p>
                     </div>
                   </div>
@@ -169,8 +169,8 @@ export default function AdminServants() {
                   </div>
                 </td>
                 <td className="px-4 py-4">
-                  {s.agent?.user?.name ? (
-                    <span className="font-medium">{s.agent.user.name}</span>
+                  {s.coordinator?.user?.name ? (
+                    <span className="font-medium">{s.coordinator.user.name}</span>
                   ) : (
                     <span className="text-on-surface-variant">Unassigned</span>
                   )}

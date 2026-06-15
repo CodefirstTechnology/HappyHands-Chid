@@ -23,7 +23,13 @@ import {
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
-const AGE_RANGES = ['0-2', '3-5', '6-12', '13+']
+const BABY_AGE_RANGES = [
+  { value: '0-3m', label: '0–3 months' },
+  { value: '3-6m', label: '3–6 months' },
+  { value: '6-12m', label: '6–12 months' },
+  { value: '12-24m', label: '12–24 months' },
+  { value: '24-36m', label: '2–3 years' },
+]
 
 const STEPS = [
   { id: 1, label: 'Personal' },
@@ -396,25 +402,25 @@ export default function OnboardServant() {
               className={inputClassName()}
             />
           </Field>
-          <Field label="Age ranges served">
+          <Field label="Baby age ranges served">
             <div className="flex flex-wrap gap-2">
-              {AGE_RANGES.map((range) => (
+              {BABY_AGE_RANGES.map(({ value, label }) => (
                 <button
-                  key={range}
+                  key={value}
                   type="button"
-                  onClick={() => toggleAgeRange(range)}
+                  onClick={() => toggleAgeRange(value)}
                   className={`rounded-full px-3 py-1 text-sm ${
-                    form.ageRangesServed.includes(range)
+                    form.ageRangesServed.includes(value)
                       ? 'bg-primary text-white'
                       : 'bg-gray-100 text-gray-700'
                   }`}
                 >
-                  {range}
+                  {label}
                 </button>
               ))}
             </div>
           </Field>
-          <Field label="Max children">
+          <Field label="Max babies at once">
             <input
               placeholder="e.g. 2"
               type="number"

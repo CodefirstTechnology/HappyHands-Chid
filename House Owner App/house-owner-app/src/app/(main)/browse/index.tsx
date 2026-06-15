@@ -22,6 +22,7 @@ import { localizedSkillLabel } from '@/lib/skills';
 import { useLiveLocation } from '@/hooks/useLiveLocation';
 import { useAuthStore } from '@/store/authStore';
 import type { LocationValue } from '@/lib/locationTypes';
+import { BABY_AGE_RANGES } from '@/constants/babyCare';
 
 export default function BrowseScreen() {
   const { t } = useTranslation();
@@ -36,7 +37,6 @@ export default function BrowseScreen() {
   const [maxChildren, setMaxChildren] = useState('');
   const [cprCert, setCprCert] = useState(false);
   const [firstAidCert, setFirstAidCert] = useState(false);
-  const ageRangeOptions = ['0-2', '3-5', '6-12', '13+'];
   const skillCodes = skills.map((s) => s.code);
 
   const searchLocation = useMemo<LocationValue | null>(() => {
@@ -208,15 +208,15 @@ export default function BrowseScreen() {
       <View style={styles.chipsSection}>
         <Text style={styles.chipsLabel}>{t('browse.ageRange')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow} contentContainerStyle={styles.chipsContent}>
-          {ageRangeOptions.map((range) => {
-            const selected = ageRange === range;
+          {BABY_AGE_RANGES.map(({ value, label }) => {
+            const selected = ageRange === value;
             return (
               <TouchableOpacity
-                key={range}
+                key={value}
                 style={[styles.chip, selected && styles.chipOn]}
-                onPress={() => setAgeRange(ageRange === range ? '' : range)}
+                onPress={() => setAgeRange(ageRange === value ? '' : value)}
               >
-                <Text style={[styles.chipText, selected && styles.chipTextOn]}>{range}</Text>
+                <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
               </TouchableOpacity>
             );
           })}

@@ -18,11 +18,26 @@ if (process.env.NODE_ENV === "production" || process.env.TRUST_PROXY === "true")
 
 function parseCorsOrigins(value) {
   if (!value || value.trim() === "*") return true;
+
   const origins = value
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
+
   if (origins.length === 0) return true;
+
+  // Expo web / local dev often uses random localhost ports (8081, 19006, etc.)
+  if (process.env.NODE_ENV !== "production") {
+    return (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (origins.includes(origin)) return callback(null, true);
+      if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+        return callback(null, true);
+      }
+      callback(new Error(`CORS blocked: ${origin}`));
+    };
+  }
+
   if (origins.length === 1) return origins[0];
   return origins;
 }

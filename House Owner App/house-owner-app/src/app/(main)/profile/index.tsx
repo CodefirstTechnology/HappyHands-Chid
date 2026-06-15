@@ -177,6 +177,7 @@ export default function ProfileScreen() {
           onChangeText={setChildrenAges}
           placeholder={t('profile.childrenAgesPlaceholder')}
         />
+        <Text style={styles.hint}>{t('profile.childrenAgesHint')}</Text>
         <GhostInput
           label={t('profile.specialRequirements')}
           value={specialRequirements}
@@ -334,6 +335,13 @@ const styles = StyleSheet.create({
     color: Stitch.colors.onSurfaceVariant,
     marginTop: 4,
     lineHeight: 18,
+  },
+  hint: {
+    fontSize: 12,
+    color: Stitch.colors.onSurfaceVariant,
+    marginTop: -8,
+    marginBottom: 12,
+    lineHeight: 16,
   },
   mapsLink: {
     flexDirection: 'row',

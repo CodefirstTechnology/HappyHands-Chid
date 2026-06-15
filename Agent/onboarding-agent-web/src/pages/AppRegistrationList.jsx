@@ -49,7 +49,7 @@ export default function AppRegistrationList() {
         },
       })
       return {
-        servants: res.data.data.caregivers,
+        caregivers: res.data.data.caregivers,
         locationNotice: res.data.data.locationNotice,
       }
     },

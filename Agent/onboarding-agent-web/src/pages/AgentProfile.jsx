@@ -9,7 +9,7 @@ import { LocationIcon } from '../components/icons/LocationIcon'
 
 const ROLE_LABELS = {
   ADMIN: 'Platform administrator',
-  COORDINATOR: 'Field agent',
+  COORDINATOR: 'Coordinator',
 }
 
 function StatCard({ label, value, accent = 'text-primary' }) {
@@ -78,11 +78,11 @@ function QuickLink({ to, title, subtitle, icon }) {
   )
 }
 
-function hasAgencyLocation(agent) {
+function hasAgencyLocation(coordinator) {
   return (
-    agent?.address?.trim() &&
-    agent.latitude != null &&
-    agent.longitude != null
+    coordinator?.address?.trim() &&
+    coordinator.latitude != null &&
+    coordinator.longitude != null
   )
 }
 
@@ -97,18 +97,18 @@ export default function AgentProfile() {
   const [settingsError, setSettingsError] = useState('')
 
   useEffect(() => {
-    if (!user?.agent) return
-    setAgencyName(user.agent.agencyName || '')
-    setServiceRadiusKm(String(user.agent.serviceRadiusKm ?? 3))
-    if (hasAgencyLocation(user.agent)) {
+    if (!user?.coordinator) return
+    setAgencyName(user.coordinator.agencyName || '')
+    setServiceRadiusKm(String(user.coordinator.serviceRadiusKm ?? 3))
+    if (hasAgencyLocation(user.coordinator)) {
       setLocation({
-        address: user.agent.address,
-        city: user.agent.city,
-        latitude: user.agent.latitude,
-        longitude: user.agent.longitude,
+        address: user.coordinator.address,
+        city: user.coordinator.city,
+        latitude: user.coordinator.latitude,
+        longitude: user.coordinator.longitude,
       })
     }
-  }, [user?.agent])
+  }, [user?.coordinator])
 
   const { data: servants = [] } = useQuery({
     queryKey: ['coordinator-servants-profile'],
@@ -176,7 +176,7 @@ export default function AgentProfile() {
     }
   }
 
-  const locationSet = hasAgencyLocation(user?.agent)
+  const locationSet = hasAgencyLocation(user?.coordinator)
 
   if (!user) {
     return (
@@ -233,10 +233,10 @@ export default function AgentProfile() {
                     <span aria-hidden>📞</span> {user.phone}
                   </span>
                 )}
-                {(user.agent?.address || user.agent?.city) && (
+                {(user.coordinator?.address || user.coordinator?.city) && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-fixed px-3 py-1.5 text-xs font-medium text-primary">
                     <LocationIcon size={14} />
-                    {user.agent.address || user.agent.city}
+                    {user.coordinator.address || user.coordinator.city}
                   </span>
                 )}
               </div>
@@ -245,16 +245,16 @@ export default function AgentProfile() {
         </div>
       </div>
 
-      {user.agent && !locationSet && (
+      {(user.coordinator || user.role === 'COORDINATOR') && !locationSet && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <strong>Agency location required.</strong> Set your office location below before
-          onboarding new servants.
+          onboarding new caregivers.
         </div>
       )}
 
       {/* Pipeline stats */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard label="Servants onboarded" value={servants.length} />
+        <StatCard label="Caregivers onboarded" value={servants.length} />
         <StatCard
           label="Pending verification"
           value={pending}
@@ -281,31 +281,31 @@ export default function AgentProfile() {
               : 'Your registered agency details for onboarded staff.'
           }
         >
-          {user.agent ? (
+          {user.coordinator ? (
             <>
               <InfoRow
                 icon="🏢"
                 label="Agency name"
-                value={user.agent.agencyName || 'Not set'}
+                value={user.coordinator.agencyName || 'Not set'}
               />
               <InfoRow
                 icon={<LocationIcon size={18} />}
                 label="Location"
                 value={
-                  user.agent.address ||
-                  (user.agent.city ? user.agent.city : 'Not set — required')
+                  user.coordinator.address ||
+                  (user.coordinator.city ? user.coordinator.city : 'Not set — required')
                 }
               />
-              <InfoRow icon="🌆" label="City" value={user.agent.city || '—'} />
+              <InfoRow icon="🌆" label="City" value={user.coordinator.city || '—'} />
               <InfoRow
                 icon="📍"
                 label="Service radius"
-                value={`${user.agent.serviceRadiusKm ?? 3} km`}
+                value={`${user.coordinator.serviceRadiusKm ?? 3} km`}
               />
               <InfoRow
                 icon="🔢"
-                label="Agent profile ID"
-                value={`#${user.agent.id}`}
+                label="Coordinator profile ID"
+                value={`#${user.coordinator.id}`}
                 mono
               />
             </>
@@ -315,7 +315,7 @@ export default function AgentProfile() {
               <p className="mt-2 text-xs text-on-surface-variant leading-relaxed">
                 {isAdmin
                   ? 'Admin accounts can manage the full platform from the Admin section in the sidebar.'
-                  : 'Contact support to link an agency profile to your account.'}
+                  : 'Set your agency name and location in Agency settings below to complete your profile.'}
               </p>
             </div>
           )}
@@ -328,7 +328,7 @@ export default function AgentProfile() {
         </SectionCard>
       </div>
 
-      {user.agent && (
+      {(user.coordinator || user.role === 'COORDINATOR') && (
         <SectionCard
           title="Agency settings"
           description="Update your agency name, office location, and how far you receive app registrations."

@@ -57,20 +57,18 @@ async function main() {
   });
 
   const childcareSkillNames = [
-    "Infant care (0–12 months)",
+    "Newborn care (0–3 months)",
+    "Infant care (3–12 months)",
     "Toddler care (1–3 years)",
-    "Preschool care (3–6 years)",
-    "School-age care (6–12 years)",
-    "Special needs care",
-    "Night nanny / overnight care",
-    "Newborn care specialist",
-    "Homework help & tutoring support",
+    "Night nanny / overnight baby care",
     "Baby feeding & nutrition",
-    "Child first aid certified",
-    "Montessori activities",
-    "Swimming supervision",
-    "School pickup & drop",
-    "Multiple children care"
+    "Baby sleep routines",
+    "Diaper & hygiene care",
+    "Premature / NICU baby care",
+    "Twin & multiple babies",
+    "Infant CPR & first aid certified",
+    "Breastfeeding support",
+    "Colic & reflux care"
   ];
 
   const defaultSkills = childcareSkillNames.map((name, index) => ({
