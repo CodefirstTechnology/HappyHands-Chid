@@ -20,6 +20,7 @@ const {
 } = require("../services/locationService");
 const { assertCoordinatorCanAccessCaregiver } = require("../services/coordinatorRegistrationService");
 const { getCoordinatorAnnualRevenue } = require("../services/coordinatorRevenueService");
+const { nameSimilarity } = require("../services/aadhaarXmlService");
 
 const parseSkills = (skills) => {
   if (!skills) return [];
@@ -99,6 +100,23 @@ const recordWhereForScope = (scope, extra = {}) => {
       ...(Object.keys(extra).length ? [extra] : [])
     ]
   };
+};
+
+const assertBankHolderMatchesAadhaar = (bankHolder, caregiver) => {
+  const holder = bankHolder?.trim();
+  if (!holder) return;
+  if (!caregiver?.aadhaarVerified || !caregiver?.aadhaarVerifiedName?.trim()) {
+    throw new ApiError(
+      400,
+      "Verify Aadhaar before saving bank details. Account holder name must match the Aadhaar name."
+    );
+  }
+  if (nameSimilarity(holder, caregiver.aadhaarVerifiedName) < 0.6) {
+    throw new ApiError(
+      400,
+      `Account holder name must match Aadhaar name (${caregiver.aadhaarVerifiedName}).`
+    );
+  }
 };
 
 const assertCoordinatorLocationSet = async (coordinatorId) => {
@@ -462,6 +480,12 @@ exports.updateCaregiver = async (req, res) => {
   }
 
   let credentials = null;
+
+  const holderToCheck =
+    bankAccountHolder !== undefined ? bankAccountHolder : existing.bankAccountHolder;
+  if (holderToCheck?.trim() || bankAccountNumber?.trim() || bankIfsc?.trim()) {
+    assertBankHolderMatchesAadhaar(holderToCheck, existing);
+  }
 
   const caregiver = await prisma.$transaction(async (tx) => {
     const userPatch = {

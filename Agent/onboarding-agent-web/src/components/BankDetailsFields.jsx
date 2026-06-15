@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { isValidIfscFormat, lookupIfsc } from '../lib/ifscLookup'
+import { holderMatchesExpected, nameSimilarity } from '../lib/nameMatch'
 
 function Field({ label, children, hint }) {
   return (
@@ -43,11 +44,12 @@ export function maskAccountNumber(value) {
 /**
  * @param {object} form
  * @param {string} accountNumberConfirm
- * @param {{ existingAccountNumber?: string }} options
+ * @param {{ existingAccountNumber?: string, aadhaarVerified?: boolean, aadhaarName?: string, requireAadhaarForBank?: boolean }} options
  * @returns {string|null} error message
  */
 export function validateBankDetails(form, accountNumberConfirm, options = {}) {
-  const { existingAccountNumber } = options
+  const { existingAccountNumber, aadhaarVerified = false, aadhaarName = '', requireAadhaarForBank = false } =
+    options
   const account = String(form.bankAccountNumber || '').replace(/\s/g, '')
   const confirm = String(accountNumberConfirm || '').replace(/\s/g, '')
   const keepingExistingAccount = !account && !!existingAccountNumber
@@ -63,6 +65,10 @@ export function validateBankDetails(form, accountNumberConfirm, options = {}) {
     form.bankUpiId
 
   if (!partial && existingAccountNumber) return null
+
+  if (requireAadhaarForBank && !aadhaarVerified) {
+    return 'Verify Aadhaar first — bank account holder name must match the Aadhaar name'
+  }
 
   if (!form.bankAccountHolder?.trim()) {
     return 'Account holder name is required when adding bank details'
@@ -91,6 +97,14 @@ export function validateBankDetails(form, accountNumberConfirm, options = {}) {
     return 'Account number is required when adding bank details'
   }
 
+  const aadhaarExpected = aadhaarName?.trim()
+  if (aadhaarExpected && form.bankAccountHolder?.trim()) {
+    const match = holderMatchesExpected(form.bankAccountHolder, aadhaarExpected)
+    if (match === false) {
+      return `Account holder name must match Aadhaar name (${aadhaarExpected})`
+    }
+  }
+
   return null
 }
 
@@ -100,17 +114,33 @@ export function BankDetailsFields({
   accountNumberConfirm = '',
   onAccountNumberConfirmChange,
   existingAccountNumber,
+  aadhaarVerified = false,
+  aadhaarName = '',
+  requireAadhaarForBank = false,
 }) {
   const [ifscInfo, setIfscInfo] = useState(null)
   const [ifscLoading, setIfscLoading] = useState(false)
   const [ifscError, setIfscError] = useState('')
   const [confirmTouched, setConfirmTouched] = useState(false)
   const lastLookupRef = useRef('')
+  const holderAutoFilledRef = useRef(false)
 
   const account = String(form.bankAccountNumber || '').replace(/\s/g, '')
   const confirm = String(accountNumberConfirm || '').replace(/\s/g, '')
+  const accountsMatch = account.length >= 9 && confirm.length >= 9 && account === confirm
   const confirmMismatch =
     confirmTouched && account && confirm && account !== confirm
+
+  const expectedName = aadhaarName?.trim()
+  const holderMatch = form.bankAccountHolder?.trim()
+    ? holderMatchesExpected(form.bankAccountHolder, expectedName)
+    : null
+  const matchScore =
+    form.bankAccountHolder?.trim() && expectedName
+      ? nameSimilarity(form.bankAccountHolder, expectedName)
+      : null
+
+  const blocked = requireAadhaarForBank && !aadhaarVerified
 
   useEffect(() => {
     const code = String(form.bankIfsc || '').trim().toUpperCase()
@@ -151,17 +181,42 @@ export function BankDetailsFields({
     return () => clearTimeout(timer)
   }, [form.bankIfsc, update])
 
+  useEffect(() => {
+    if (!aadhaarVerified || !aadhaarName?.trim()) return
+    if (form.bankAccountHolder?.trim()) return
+    update('bankAccountHolder', aadhaarName.trim())
+  }, [aadhaarVerified, aadhaarName, form.bankAccountHolder, update])
+
+  useEffect(() => {
+    if (!accountsMatch || !expectedName) return
+    if (form.bankAccountHolder?.trim()) return
+    if (holderAutoFilledRef.current) return
+    holderAutoFilledRef.current = true
+    update('bankAccountHolder', expectedName)
+  }, [accountsMatch, expectedName, form.bankAccountHolder, update])
+
+  useEffect(() => {
+    if (!accountsMatch) {
+      holderAutoFilledRef.current = false
+    }
+  }, [accountsMatch])
+
   return (
     <div className="space-y-4">
-      <Field label="Account holder name">
-        <input
-          placeholder="Name as per bank records"
-          value={form.bankAccountHolder}
-          onChange={(e) => update('bankAccountHolder', e.target.value)}
-          className={inputClassName()}
-        />
-      </Field>
+      {blocked ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Verify Aadhaar first.</strong> Bank details can only be added after Aadhaar
+          verification. The account holder name must match the name on Aadhaar.
+        </div>
+      ) : null}
 
+      {aadhaarVerified && expectedName ? (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+          <strong>Aadhaar name:</strong> {expectedName} — account holder must match this name.
+        </div>
+      ) : null}
+
+      <fieldset disabled={blocked} className="space-y-4 disabled:opacity-60">
       <Field label="IFSC code">
         <input
           placeholder="e.g. SBIN0001234"
@@ -231,8 +286,36 @@ export function BankDetailsFields({
         />
         {confirmMismatch ? (
           <span className="text-xs text-error">Account numbers do not match</span>
-        ) : account && confirm && account === confirm ? (
+        ) : accountsMatch ? (
           <span className="text-xs text-emerald-700">Account numbers match</span>
+        ) : null}
+      </Field>
+
+      <Field
+        label="Account holder name"
+        hint={
+          expectedName
+            ? `Must match Aadhaar name: ${expectedName}`
+            : 'Name exactly as on the bank account'
+        }
+      >
+        <input
+          placeholder="Name as per bank records"
+          value={form.bankAccountHolder}
+          onChange={(e) => update('bankAccountHolder', e.target.value)}
+          className={inputClassName(holderMatch === false)}
+        />
+        {accountsMatch && holderMatch === true ? (
+          <span className="text-xs text-emerald-700">
+            ✓ Account holder matches Aadhaar name
+            {matchScore != null ? ` (${Math.round(matchScore * 100)}%)` : ''}
+          </span>
+        ) : null}
+        {holderMatch === false ? (
+          <span className="text-xs text-error">
+            Name does not match Aadhaar ({expectedName}). Use the name registered with this bank
+            account.
+          </span>
         ) : null}
       </Field>
 
@@ -244,6 +327,7 @@ export function BankDetailsFields({
           className={inputClassName()}
         />
       </Field>
+      </fieldset>
     </div>
   )
 }

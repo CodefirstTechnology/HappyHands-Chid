@@ -134,6 +134,9 @@ export default function EditServant() {
     }
     const bankErr = validateBankDetails(form, bankAccountConfirm, {
       existingAccountNumber: servant?.bankAccountNumber,
+      aadhaarVerified: !!servant?.aadhaarVerified,
+      aadhaarName: servant?.aadhaarVerifiedName,
+      requireAadhaarForBank: true,
     })
     if (bankErr) {
       setError(bankErr)
@@ -389,6 +392,9 @@ export default function EditServant() {
           accountNumberConfirm={bankAccountConfirm}
           onAccountNumberConfirmChange={setBankAccountConfirm}
           existingAccountNumber={servant.bankAccountNumber}
+          aadhaarVerified={!!servant.aadhaarVerified}
+          aadhaarName={servant.aadhaarVerifiedName}
+          requireAadhaarForBank
         />
       </div>
 
