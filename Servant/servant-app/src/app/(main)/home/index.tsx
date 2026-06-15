@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -57,6 +57,7 @@ export default function ServantHomeScreen() {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const refreshUser = useAuthStore((s) => s.refreshUser);
   const qc = useQueryClient();
   const [elapsed, setElapsed] = useState(0);
   const [activeBookingId, setActiveBookingId] = useState<number | null>(null);
@@ -68,6 +69,14 @@ export default function ServantHomeScreen() {
 
   const trackingBookingId = activeBookingId ?? onWayBookingId;
   useServantLocationReporter(trackingBookingId, trackingBookingId != null);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated) return;
+      void refreshUser();
+      void qc.invalidateQueries({ queryKey: ['caregiver-profile'] });
+    }, [isAuthenticated, qc, refreshUser]),
+  );
 
   const refreshBookings = () =>
     Promise.all([

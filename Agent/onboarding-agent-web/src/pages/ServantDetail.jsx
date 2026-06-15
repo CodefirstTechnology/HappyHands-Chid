@@ -108,21 +108,27 @@ export default function ServantDetail() {
   })
 
   const verify = async (status, rejectionReason, opts = {}) => {
-    const res = await api.patch(`/coordinator/caregivers/${id}/verify`, {
-      status,
-      reason: rejectionReason,
-      ...(opts.password ? { password: opts.password } : {}),
-      ...(opts.generatePassword ? { generatePassword: true } : {}),
-    })
-    qc.invalidateQueries({ queryKey: ['caregiver', id] })
-    qc.invalidateQueries({ queryKey: ['coordinator-servants'] })
-    qc.invalidateQueries({ queryKey: ['coordinator-registrations'] })
-    setRejectOpen(false)
-    setApproveOpen(false)
-    if (res.data?.data?.credentials) {
-      setCredentials(res.data.data.credentials)
+    try {
+      const res = await api.patch(`/coordinator/caregivers/${id}/verify`, {
+        status,
+        reason: rejectionReason,
+        ...(opts.password ? { password: opts.password } : {}),
+        ...(opts.generatePassword ? { generatePassword: true } : {}),
+      })
+      qc.invalidateQueries({ queryKey: ['caregiver', id] })
+      qc.invalidateQueries({ queryKey: ['coordinator-servants'] })
+      qc.invalidateQueries({ queryKey: ['coordinator-registrations'] })
+      setRejectOpen(false)
+      setApproveOpen(false)
+      if (res.data?.data?.credentials) {
+        setCredentials(res.data.data.credentials)
+      }
+      return res
+    } catch (err) {
+      const msg = err.response?.data?.message || 'Action failed'
+      window.alert(msg)
+      throw err
     }
-    return res
   }
 
   useEffect(() => {
@@ -145,19 +151,25 @@ export default function ServantDetail() {
   const isAppRegistration =
     servant?.registrationSource === 'SELF' || servant?.user?.isActive === false
 
-  const handleApproveClick = () => {
+  const handleApproveClick = async () => {
+    if (!servant?.aadhaarVerified) {
+      window.alert(
+        'Aadhaar verification is required before approval.\n\nScroll to the Aadhaar section, upload the Offline e-KYC ZIP from myAadhaar, then try Approve again.',
+      )
+      return
+    }
     if (isAppRegistration && !servant?.user?.coordinatorSetPassword) {
       setApproveOpen(true)
       return
     }
     if (isAppRegistration && servant?.user?.coordinatorSetPassword) {
       if (window.confirm('Approve this helper? They can sign in with the password you already set.')) {
-        verify('VERIFIED')
+        await verify('VERIFIED')
       }
       return
     }
-    if (window.confirm('Approve this servant?')) {
-      verify('VERIFIED')
+    if (window.confirm('Approve this caregiver?')) {
+      await verify('VERIFIED')
     }
   }
 
@@ -536,10 +548,17 @@ export default function ServantDetail() {
 
             {canReview && (
               <div className="space-y-2">
+                {!servant.aadhaarVerified ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                    <strong>Aadhaar required.</strong> Complete Aadhaar verification in the section
+                    below before you can approve this caregiver.
+                  </div>
+                ) : null}
                 <Button
                   variant="success"
                   className="w-full"
                   onClick={handleApproveClick}
+                  disabled={!servant.aadhaarVerified}
                 >
                   ✓ Approve
                 </Button>

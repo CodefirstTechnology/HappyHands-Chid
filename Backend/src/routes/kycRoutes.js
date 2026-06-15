@@ -5,21 +5,6 @@ const { authenticate, requireRole } = require("../middleware/auth");
 const { uploadAadhaarZip } = require("../middleware/uploadKyc");
 
 router.post(
-  "/aadhaar/xml/verify",
-  authenticate,
-  requireRole("CAREGIVER"),
-  uploadAadhaarZip.single("aadhaarZip"),
-  kycController.verifyAadhaarXmlForMe
-);
-
-router.get(
-  "/aadhaar/status",
-  authenticate,
-  requireRole("CAREGIVER"),
-  kycController.getMyAadhaarStatus
-);
-
-router.post(
   "/aadhaar/xml/verify/:id",
   authenticate,
   requireRole("COORDINATOR", "ADMIN"),
@@ -30,7 +15,7 @@ router.post(
 router.get(
   "/aadhaar/status/:id",
   authenticate,
-  requireRole("COORDINATOR", "ADMIN", "CAREGIVER"),
+  requireRole("COORDINATOR", "ADMIN"),
   kycController.getAadhaarStatus
 );
 

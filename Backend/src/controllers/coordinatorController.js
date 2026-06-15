@@ -218,6 +218,7 @@ exports.createCaregiver = async (req, res) => {
       phone,
       password: hashed,
       roleId: ROLE_IDS.CAREGIVER,
+      isActive: false,
       caregiver: {
         create: {
           coordinatorId: assignCoordinatorId,

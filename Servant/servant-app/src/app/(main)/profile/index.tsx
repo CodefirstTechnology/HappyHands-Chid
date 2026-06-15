@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { router } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +21,15 @@ type Skill = { skillName: string };
 
 export default function ProfileScreen() {
   const { t } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, refreshUser } = useAuthStore();
+  const qc = useQueryClient();
+
+  useFocusEffect(
+    useCallback(() => {
+      void refreshUser();
+      void qc.invalidateQueries({ queryKey: ['caregiver-profile'] });
+    }, [qc, refreshUser]),
+  );
 
   const { data: profile } = useQuery({
     queryKey: ['caregiver-profile'],
@@ -251,32 +260,6 @@ export default function ProfileScreen() {
             <MaterialIcons name="chevron-right" size={22} color={Stitch.colors.onSurfaceVariant} />
           </TouchableOpacity>
         ) : null}
-      </GlassCard>
-
-      <GlassCard style={styles.sectionCard}>
-        <View style={styles.sectionHead}>
-          <View style={styles.sectionIcon}>
-            <MaterialIcons name="verified-user" size={20} color={Stitch.colors.secondary} />
-          </View>
-          <View style={styles.sectionHeadText}>
-            <Text style={styles.sectionTitle}>Aadhaar verification</Text>
-            <Text style={styles.sectionSub}>
-              Verify with Offline e-KYC from myAadhaar (free, UIDAI-signed)
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity
-          style={styles.zoneBtn}
-          activeOpacity={0.85}
-          onPress={() => router.push('/(main)/profile/verify-aadhaar')}
-        >
-          <MaterialIcons name="upload-file" size={22} color={Stitch.colors.primary} />
-          <View style={styles.zoneBtnTextWrap}>
-            <Text style={styles.zoneBtnTitle}>Verify Aadhaar</Text>
-            <Text style={styles.zoneBtnSub}>Upload ZIP + 4-digit share code</Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={22} color={Stitch.colors.onSurfaceVariant} />
-        </TouchableOpacity>
       </GlassCard>
 
       <GradientButton title={t('auth.signOut')} variant="outline" onPress={signOut} style={styles.signOutBtn} />

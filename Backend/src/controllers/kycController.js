@@ -34,10 +34,6 @@ const resolveCoordinatorScope = async (user) => {
 const assertCaregiverAccess = async (req, caregiver) => {
   if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
   const role = getRoleCode(req.user);
-  if (role === "CAREGIVER") {
-    if (caregiver.userId !== req.user.id) throw new ApiError(403, "Forbidden");
-    return;
-  }
   if (role === "COORDINATOR" || role === "ADMIN") {
     const scope = await resolveCoordinatorScope(req.user);
     if (!scope.isAdmin && scope.coordinatorId) {
@@ -47,7 +43,7 @@ const assertCaregiverAccess = async (req, caregiver) => {
     }
     return;
   }
-  throw new ApiError(403, "Forbidden");
+  throw new ApiError(403, "Only coordinators can verify caregiver Aadhaar");
 };
 
 const applyAadhaarVerification = async (caregiver, result) => {
@@ -70,46 +66,6 @@ const applyAadhaarVerification = async (caregiver, result) => {
     select: caregiverKycSelect
   });
   return updated;
-};
-
-exports.verifyAadhaarXmlForMe = async (req, res) => {
-  const shareCode = String(req.body.shareCode || "").trim();
-  if (!req.file?.buffer) throw new ApiError(400, "Aadhaar ZIP file is required");
-
-  const caregiver = await prisma.caregiver.findUnique({
-    where: { userId: req.user.id },
-    include: { user: true }
-  });
-  if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
-
-  let result;
-  try {
-    result = await processOfflineAadhaarZip({
-      zipBuffer: req.file.buffer,
-      shareCode,
-      expectedName: caregiver.user.name
-    });
-  } catch (err) {
-    throw new ApiError(400, err.message || "Invalid Aadhaar XML");
-  }
-
-  const caregiverUpdated = await applyAadhaarVerification(caregiver, result);
-
-  sendSuccess(res, {
-    message: "Aadhaar verified successfully",
-    verification: {
-      verified: true,
-      type: "UIDAI_XML",
-      name: result.name,
-      dob: result.dob,
-      gender: result.genderLabel,
-      address: result.address,
-      referenceId: result.referenceId,
-      nameMatch: result.nameMatch,
-      nameMatchScore: result.nameMatchScore
-    },
-    caregiver: caregiverUpdated
-  });
 };
 
 exports.verifyAadhaarXmlForCaregiver = async (req, res) => {
@@ -160,31 +116,6 @@ exports.getAadhaarStatus = async (req, res) => {
     select: caregiverKycSelect
   });
   await assertCaregiverAccess(req, caregiver);
-
-  sendSuccess(res, {
-    aadhaar: {
-      verified: caregiver.aadhaarVerified,
-      type: caregiver.aadhaarVerificationType,
-      verifiedAt: caregiver.aadhaarVerifiedAt,
-      name: caregiver.aadhaarVerifiedName,
-      dob: caregiver.aadhaarVerifiedDob,
-      gender: caregiver.aadhaarVerifiedGender,
-      address: caregiver.aadhaarVerifiedAddress,
-      photoUrl: caregiver.aadhaarPhotoUrl,
-      referenceId: caregiver.aadhaarReferenceId,
-      nameMatch: caregiver.aadhaarNameMatch
-    },
-    phoneVerified: caregiver.phoneVerified,
-    verificationStatus: caregiver.verificationStatus
-  });
-};
-
-exports.getMyAadhaarStatus = async (req, res) => {
-  const caregiver = await prisma.caregiver.findUnique({
-    where: { userId: req.user.id },
-    select: caregiverKycSelect
-  });
-  if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
 
   sendSuccess(res, {
     aadhaar: {

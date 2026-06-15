@@ -22,6 +22,7 @@ type AuthState = {
   submitApplication: (data: Record<string, unknown>) => Promise<string>;
   logout: () => Promise<void>;
   hydrate: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -94,6 +95,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     await clearAuthTokens();
     set({ user: null, isAuthenticated: false });
+  },
+
+  refreshUser: async () => {
+    try {
+      const token = await getToken('accessToken');
+      if (!token) return;
+      const { data } = await api.get('/auth/me');
+      const user = data.data.user;
+      set({ user, isAuthenticated: true });
+    } catch {
+      /* keep existing session on transient errors */
+    }
   },
 }));
 
