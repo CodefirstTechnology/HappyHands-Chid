@@ -27,7 +27,13 @@ export async function reverseGeocode(
   return res.data.data as GeoLocation;
 }
 
-export async function updateHomeLocation(payload: Partial<GeoLocation>) {
+export async function updateHomeLocation(
+  payload: Partial<GeoLocation> & {
+    numberOfChildren?: number;
+    childrenAges?: number[];
+    specialRequirements?: string;
+  },
+) {
   const res = await api.patch('/auth/me/location', payload);
-  return res.data.data as { user: unknown; houseOwner: unknown };
+  return res.data.data as { user: unknown; parent: unknown };
 }

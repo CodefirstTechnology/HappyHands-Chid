@@ -38,9 +38,9 @@ export default function AppRegistrationList() {
   const [credentials, setCredentials] = useState(null)
 
   const { data, isLoading } = useQuery({
-    queryKey: ['agent-registrations', status, search],
+    queryKey: ['coordinator-registrations', status, search],
     queryFn: async () => {
-      const res = await api.get('/agent/servants', {
+      const res = await api.get('/coordinator/caregivers', {
         params: {
           category: 'registered',
           status: status || undefined,
@@ -49,20 +49,20 @@ export default function AppRegistrationList() {
         },
       })
       return {
-        servants: res.data.data.servants,
+        servants: res.data.data.caregivers,
         locationNotice: res.data.data.locationNotice,
       }
     },
   })
 
-  const rows = data?.servants || []
+  const rows = data?.caregivers || []
   const locationNotice = data?.locationNotice
 
   const stats = useMemo(() => {
     const pending = rows.filter((s) =>
       ['PENDING', 'UNDER_REVIEW'].includes(s.verificationStatus),
     ).length
-    const needPassword = rows.filter((s) => !s.user.agentSetPassword).length
+    const needPassword = rows.filter((s) => !s.user.coordinatorSetPassword).length
     return { total: rows.length, pending, needPassword }
   }, [rows])
 
@@ -70,11 +70,11 @@ export default function AppRegistrationList() {
     if (!passwordTarget) return
     setPasswordLoading(true)
     try {
-      const res = await api.patch(`/agent/servants/${passwordTarget.id}/password`, {
+      const res = await api.patch(`/coordinator/caregivers/${passwordTarget.id}/password`, {
         password,
       })
-      qc.invalidateQueries({ queryKey: ['agent-registrations'] })
-      qc.invalidateQueries({ queryKey: ['servant', String(passwordTarget.id)] })
+      qc.invalidateQueries({ queryKey: ['coordinator-registrations'] })
+      qc.invalidateQueries({ queryKey: ['caregiver', String(passwordTarget.id)] })
       setCredentials(res.data?.data?.credentials || null)
       setPasswordTarget(null)
     } catch (e) {
@@ -91,7 +91,7 @@ export default function AppRegistrationList() {
         title="App registrations"
         description="Helpers who signed up in the Servant app within your agency service radius."
         action={
-          <Link to="/servants">
+          <Link to="/caregivers">
             <Button variant="secondary">My servants</Button>
           </Link>
         }
@@ -152,7 +152,7 @@ export default function AppRegistrationList() {
                   <Badge status={s.verificationStatus} />
                 </div>
                 <div className="mt-3">
-                  <PasswordPill set={s.user.agentSetPassword} />
+                  <PasswordPill set={s.user.coordinatorSetPassword} />
                 </div>
                 <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                   <Button
@@ -160,9 +160,9 @@ export default function AppRegistrationList() {
                     className="flex-1 text-sm"
                     onClick={() => setPasswordTarget(s)}
                   >
-                    {s.user.agentSetPassword ? 'Change password' : 'Set password'}
+                    {s.user.coordinatorSetPassword ? 'Change password' : 'Set password'}
                   </Button>
-                  <Link to={`/servants/${s.id}?from=registrations`} className="flex-1">
+                  <Link to={`/caregivers/${s.id}?from=registrations`} className="flex-1">
                     <Button variant="secondary" className="w-full text-sm">
                       Review
                     </Button>
@@ -193,7 +193,7 @@ export default function AppRegistrationList() {
                   <p className="text-xs text-on-surface-variant">{s.user.phone || '—'}</p>
                 </td>
                 <td className="px-4 py-4">
-                  <PasswordPill set={s.user.agentSetPassword} />
+                  <PasswordPill set={s.user.coordinatorSetPassword} />
                 </td>
                 <td className="px-4 py-4">
                   <Badge status={s.verificationStatus} />
@@ -205,10 +205,10 @@ export default function AppRegistrationList() {
                       onClick={() => setPasswordTarget(s)}
                       className="rounded-lg bg-secondary/10 px-3 py-1.5 text-xs font-semibold text-secondary hover:bg-secondary/15"
                     >
-                      {s.user.agentSetPassword ? 'Password' : 'Set password'}
+                      {s.user.coordinatorSetPassword ? 'Password' : 'Set password'}
                     </button>
                     <Link
-                      to={`/servants/${s.id}?from=registrations`}
+                      to={`/caregivers/${s.id}?from=registrations`}
                       className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
                     >
                       Review

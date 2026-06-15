@@ -14,7 +14,7 @@ const {
 router.post(
   "/",
   authenticate,
-  requireRole("HOUSE_OWNER"),
+  requireRole("PARENT"),
   validate(createBookingSchema),
   bookingController.createBooking
 );
@@ -22,7 +22,7 @@ router.get("/", authenticate, bookingController.listBookings);
 router.get(
   "/open-requests",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   bookingController.listOpenRequests
 );
 router.get("/:id", authenticate, bookingController.getBooking);
@@ -30,53 +30,53 @@ router.get("/:id/tracking", authenticate, bookingController.getBookingTracking);
 router.post(
   "/:id/tracking",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   validate(updateTrackingSchema),
   bookingController.updateBookingTracking
 );
 router.patch(
   "/:id/confirm",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   bookingController.confirmBooking
 );
 router.patch(
   "/:id/reject",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   validate(rejectBookingSchema),
   bookingController.rejectBooking
 );
 router.patch(
   "/:id/arrived",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   bookingController.markArrived
 );
 router.post(
   "/:id/verify-work-otp",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   validate(verifyWorkOtpSchema),
   bookingController.verifyWorkOtp
 );
 router.post(
   "/:id/resend-work-otp",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   bookingController.resendWorkOtp
 );
 router.patch(
   "/:id/cancel",
   authenticate,
-  requireRole("HOUSE_OWNER"),
+  requireRole("PARENT"),
   bookingController.cancelBooking
 );
 router.patch("/:id/complete", authenticate, bookingController.completeBooking);
 router.post(
   "/:id/review",
   authenticate,
-  requireRole("HOUSE_OWNER"),
+  requireRole("PARENT"),
   validate(reviewSchema),
   bookingController.createReview
 );

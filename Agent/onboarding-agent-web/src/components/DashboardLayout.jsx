@@ -22,8 +22,8 @@ export function DashboardLayout() {
     <div className="flex min-h-screen bg-background">
       <aside className="fixed flex h-full w-64 flex-col border-r border-outline-variant/30 bg-surface/90 backdrop-blur-xl p-5">
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-primary">StaffEra</h1>
-          <p className="text-xs text-on-surface-variant">Agent pipeline</p>
+          <h1 className="text-xl font-bold text-primary">ChildCare</h1>
+          <p className="text-xs text-on-surface-variant">Coordinator pipeline</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1">
           <NavLink to="/" end className={linkClass}>
@@ -32,8 +32,8 @@ export function DashboardLayout() {
           <NavLink to="/registrations" className={linkClass}>
             App registrations
           </NavLink>
-          <NavLink to="/servants" className={linkClass}>
-            Servants
+          <NavLink to="/caregivers" className={linkClass}>
+            Caregivers
           </NavLink>
           <NavLink to="/profile" className={linkClass}>
             Profile
@@ -48,7 +48,7 @@ export function DashboardLayout() {
                 Overview
               </NavLink>
               <NavLink to="/admin/agents" className={linkClass}>
-                Agents
+                Coordinators
               </NavLink>
               <NavLink to="/admin/users" className={linkClass}>
                 Users
@@ -56,8 +56,8 @@ export function DashboardLayout() {
               <NavLink to="/admin/bookings" className={linkClass}>
                 Bookings
               </NavLink>
-              <NavLink to="/admin/servants" className={linkClass}>
-                All servants
+              <NavLink to="/admin/caregivers" className={linkClass}>
+                All caregivers
               </NavLink>
               <NavLink to="/admin/skills" className={linkClass}>
                 Skills

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "servant-app",
-    "slug": "servant-app",
+    "name": "ChildCare for Caregivers",
+    "slug": "childcare-caregiver-app",
     "owner": "pravinbehere45",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,11 +9,11 @@
     "scheme": "servantapp",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.justdailai.servant",
+      "bundleIdentifier": "com.childcare.caregiverapp",
       "icon": "./assets/expo.icon"
     },
     "android": {
-      "package": "com.justdailai.servant",
+      "package": "com.childcare.caregiverapp",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

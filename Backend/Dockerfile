@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1
+# ChildCare API — production Docker image
 
 FROM node:20-alpine AS deps
 WORKDIR /app
@@ -14,8 +14,8 @@ ENV NODE_ENV=production
 ENV PORT=5000
 
 RUN apk add --no-cache openssl \
-  && addgroup -S staffera \
-  && adduser -S staffera -G staffera
+  && addgroup -S childcare \
+  && adduser -S childcare -G childcare
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
@@ -25,10 +25,10 @@ COPY docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN npx prisma generate \
   && mkdir -p uploads \
-  && chown -R staffera:staffera /app \
+  && chown -R childcare:childcare /app \
   && chmod +x docker-entrypoint.sh
 
-USER staffera
+USER childcare
 
 EXPOSE 5000
 

@@ -35,7 +35,7 @@ export default ({ config }) => ({
       'expo-location',
       {
         locationWhenInUsePermission:
-          'StaffEra uses your location to mark your service zones and job addresses.',
+          'ChildCare uses your location to mark your service zones and care addresses.',
         isAndroidBackgroundLocationEnabled: false,
       },
     ],
@@ -43,7 +43,7 @@ export default ({ config }) => ({
       'expo-notifications',
       {
         icon: './assets/images/icon.png',
-        color: '#15157d',
+        color: '#1B6CA8',
         sounds: [],
       },
     ],

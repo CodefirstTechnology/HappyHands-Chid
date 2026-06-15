@@ -9,7 +9,7 @@ const sessionSlotSchema = z.object({
 const createBookingSchema = z.object({
   body: z
     .object({
-      servantId: optionalPositiveInt(),
+      caregiverId: optionalPositiveInt(),
       bookingType: z.enum(["MONTHLY", "SESSION"]),
       requestedSkill: z.string().optional(),
       monthlyStartDate: z.string().min(1).optional(),
@@ -49,7 +49,7 @@ const createBookingSchema = z.object({
           });
         }
       }
-      if (!data.servantId) {
+      if (!data.caregiverId) {
         if (data.latitude == null || data.longitude == null) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -69,6 +69,7 @@ const createBookingSchema = z.object({
 const reviewSchema = z.object({
   body: z.object({
     rating: z.coerce.number().min(1).max(5),
+    childSafetyRating: z.coerce.number().int().min(1).max(5).optional(),
     comment: z.string().optional()
   })
 });

@@ -9,7 +9,7 @@ import { LocationIcon } from '../components/icons/LocationIcon'
 
 const ROLE_LABELS = {
   ADMIN: 'Platform administrator',
-  AGENT: 'Field agent',
+  COORDINATOR: 'Field agent',
 }
 
 function StatCard({ label, value, accent = 'text-primary' }) {
@@ -111,14 +111,14 @@ export default function AgentProfile() {
   }, [user?.agent])
 
   const { data: servants = [] } = useQuery({
-    queryKey: ['agent-servants-profile'],
+    queryKey: ['coordinator-servants-profile'],
     queryFn: async () => {
-      const res = await api.get('/agent/servants', {
+      const res = await api.get('/coordinator/caregivers', {
         params: { category: 'onboarded', limit: 100 },
       })
-      return res.data.data.servants
+      return res.data.data.caregivers
     },
-    enabled: !!user && ['AGENT', 'ADMIN'].includes(user.role),
+    enabled: !!user && ['COORDINATOR', 'ADMIN'].includes(user.role),
   })
 
   const verified = servants.filter((s) => s.verificationStatus === 'VERIFIED').length
@@ -160,7 +160,7 @@ export default function AgentProfile() {
     }
     setSaving(true)
     try {
-      const res = await api.patch('/agent/profile', {
+      const res = await api.patch('/coordinator/profile', {
         agencyName: agencyName.trim() || undefined,
         address: location.address,
         city: location.city,
@@ -192,7 +192,7 @@ export default function AgentProfile() {
       <div>
         <h2 className="text-2xl font-bold text-primary">Your profile</h2>
         <p className="mt-1 text-sm text-on-surface-variant">
-          Account details and agency information for the StaffEra agent portal.
+          Account details and agency information for the ChildCare coordinator portal.
         </p>
       </div>
 
@@ -377,13 +377,13 @@ export default function AgentProfile() {
       <SectionCard title="Quick actions" description="Jump to common tasks.">
         <div className="grid gap-3 sm:grid-cols-2">
           <QuickLink
-            to="/servants"
+            to="/caregivers"
             title="My servants"
             subtitle="View and verify onboarded staff"
             icon="👥"
           />
           <QuickLink
-            to="/servants/new"
+            to="/caregivers/new"
             title="Onboard new servant"
             subtitle="Start the verification pipeline"
             icon="➕"

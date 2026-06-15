@@ -1,6 +1,5 @@
 /**
- * StaffEra Stitch design tokens — premium_service_logic / DESIGN.md
- * UX tuned for Indian households: trust (indigo), warmth (tertiary orange), clarity (₹, verified)
+ * ChildCare Stitch design tokens
  */
 export const Stitch = {
   colors: {
@@ -14,25 +13,25 @@ export const Stitch = {
     onSurfaceVariant: '#464652',
     outline: '#777683',
     outlineVariant: '#c7c5d4',
-    primary: '#15157d',
-    primaryContainer: '#2e3192',
-    primaryFixed: '#e1e0ff',
+    primary: '#1B6CA8',
+    primaryContainer: '#155a8c',
+    primaryFixed: '#e1f0fa',
     onPrimary: '#ffffff',
-    secondary: '#7d44a4',
-    secondaryContainer: '#d697fe',
-    secondaryFixed: '#f4daff',
+    secondary: '#2CA58D',
+    secondaryContainer: '#249178',
+    secondaryFixed: '#e0f5f0',
     tertiary: '#491a00',
     tertiaryContainer: '#6c2a00',
     tertiaryFixed: '#ffdbcb',
     onTertiaryContainer: '#f19160',
     error: '#ba1a1a',
     errorContainer: '#ffdad6',
-    success: '#0d9488',
-    successBg: 'rgba(13, 148, 136, 0.12)',
-    gradientStart: '#ED1E79',
-    gradientEnd: '#662D8C',
-    shadowTint: 'rgba(46, 49, 146, 0.08)',
-    shadowGlow: 'rgba(237, 30, 121, 0.25)',
+    success: '#2CA58D',
+    successBg: 'rgba(44, 165, 141, 0.12)',
+    gradientStart: '#1B6CA8',
+    gradientEnd: '#2CA58D',
+    shadowTint: 'rgba(27, 108, 168, 0.08)',
+    shadowGlow: 'rgba(44, 165, 141, 0.25)',
   },
   radius: {
     sm: 8,
@@ -56,15 +55,15 @@ export const Stitch = {
     caption: { fontSize: 12, fontWeight: '500' as const },
   },
   copy: {
-    trustLine: 'Verified helpers · Secure payments · Support in English & Hindi',
-    safeData: 'Your home details stay private and encrypted.',
+    trustLine: 'Verified caregivers · Secure payments · Support in English & Hindi',
+    safeData: 'Your family details stay private and encrypted.',
     rupee: '₹',
   },
 };
 
 export const StatusColors: Record<string, { bg: string; text: string }> = {
   PENDING: { bg: 'rgba(241, 145, 96, 0.2)', text: '#6c2a00' },
-  CONFIRMED: { bg: 'rgba(157, 161, 255, 0.25)', text: '#15157d' },
+  CONFIRMED: { bg: 'rgba(44, 165, 141, 0.15)', text: '#1B6CA8' },
   ACTIVE: { bg: Stitch.colors.successBg, text: Stitch.colors.success },
   COMPLETED: { bg: Stitch.colors.surfaceContainer, text: Stitch.colors.onSurfaceVariant },
   EXPIRED: { bg: 'rgba(120, 120, 128, 0.18)', text: '#5c5c66' },

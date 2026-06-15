@@ -11,11 +11,16 @@ export type Skill = {
 
 export function useSkills() {
   return useQuery({
-    queryKey: ['skills'],
+    queryKey: ['skills', 'public'],
     queryFn: async () => {
-      const res = await api.get('/skills');
-      return res.data.data.skills as Skill[];
+      const res = await api.get('/skills/public');
+      const list = res.data?.data?.skills;
+      if (!Array.isArray(list)) {
+        throw new Error('Invalid skills response');
+      }
+      return list as Skill[];
     },
     staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 }

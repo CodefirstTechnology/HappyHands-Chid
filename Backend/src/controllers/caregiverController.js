@@ -3,44 +3,65 @@ const ApiError = require("../utils/ApiError");
 const { sendSuccess } = require("../utils/response");
 const { parseJsonArray, normalizeBookingRow } = require("../services/bookingService");
 const {
-  findServantsNearLocation,
-  servantCoversLocation,
-  bookingMatchesServantSkill,
+  findCaregiversNearLocation,
+  caregiverCoversLocation,
+  bookingMatchesCaregiverSkill,
   DEFAULT_RADIUS_KM
 } = require("../services/locationService");
 
-const servantInclude = {
+const caregiverInclude = {
   user: { select: { id: true, name: true, email: true, phone: true } },
   skills: true,
   zones: true,
-  agent: { include: { user: { select: { name: true } } } }
+  coordinator: { include: { user: { select: { name: true } } } }
 };
 
-const resolveHouseOwnerCoords = async (userId, queryLat, queryLng) => {
+const resolveParentCoords = async (userId, queryLat, queryLng) => {
   let lat = queryLat != null ? Number(queryLat) : null;
   let lng = queryLng != null ? Number(queryLng) : null;
 
   if (lat == null || lng == null || Number.isNaN(lat) || Number.isNaN(lng)) {
-    const ho = await prisma.houseOwner.findUnique({ where: { userId } });
-    if (ho?.latitude != null && ho?.longitude != null) {
-      lat = ho.latitude;
-      lng = ho.longitude;
+    const parent = await prisma.parent.findUnique({ where: { userId } });
+    if (parent?.latitude != null && parent?.longitude != null) {
+      lat = parent.latitude;
+      lng = parent.longitude;
     }
   }
 
   return { lat, lng };
 };
 
-exports.listServants = async (req, res) => {
-  const { skill, city, zone, latitude, longitude, radiusKm } = req.query;
+const parseBoolQuery = (value) => {
+  if (value === undefined || value === null || value === "") return undefined;
+  return String(value).toLowerCase() === "true";
+};
+
+exports.listCaregivers = async (req, res) => {
+  const {
+    skill,
+    city,
+    zone,
+    latitude,
+    longitude,
+    radiusKm,
+    ageRange,
+    hasCprCert,
+    hasFirstAidCert,
+    maxChildren
+  } = req.query;
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(50, parseInt(req.query.limit, 10) || 20);
   const skip = (page - 1) * limit;
-  const { lat, lng } = await resolveHouseOwnerCoords(req.user.id, latitude, longitude);
+  const { lat, lng } = await resolveParentCoords(req.user.id, latitude, longitude);
   const radius = radiusKm != null ? Number(radiusKm) : DEFAULT_RADIUS_KM;
 
   const requireAadhaar =
     process.env.REQUIRE_AADHAAR_VERIFICATION !== "false";
+
+  const cprFilter = parseBoolQuery(hasCprCert);
+  const firstAidFilter = parseBoolQuery(hasFirstAidCert);
+  const maxChildrenFilter =
+    maxChildren != null && maxChildren !== "" ? parseInt(maxChildren, 10) : null;
 
   const where = {
     verificationStatus: "VERIFIED",
@@ -49,10 +70,23 @@ exports.listServants = async (req, res) => {
     ...(skill
       ? { skills: { some: { skillName: { equals: skill, mode: "insensitive" } } } }
       : {}),
+    ...(ageRange
+      ? { ageRangesServed: { has: String(ageRange) } }
+      : {}),
+    ...(cprFilter === true ? { hasCprCert: true } : {}),
+    ...(firstAidFilter === true ? { hasFirstAidCert: true } : {}),
+    ...(maxChildrenFilter != null && !Number.isNaN(maxChildrenFilter)
+      ? {
+          OR: [
+            { maxChildren: { gte: maxChildrenFilter } },
+            { maxChildren: null }
+          ]
+        }
+      : {}),
     ...(city
       ? {
           OR: [
-            { agent: { city: { contains: city, mode: "insensitive" } } },
+            { coordinator: { city: { contains: city, mode: "insensitive" } } },
             { zones: { some: { city: { contains: city, mode: "insensitive" } } } }
           ]
         }
@@ -73,75 +107,75 @@ exports.listServants = async (req, res) => {
 
   if (lat == null || lng == null || Number.isNaN(lat) || Number.isNaN(lng)) {
     return sendSuccess(res, {
-      servants: [],
+      caregivers: [],
       pagination: { page, limit, total: 0 },
       locationRequired: true
     });
   }
 
-  let servants = await prisma.servant.findMany({
+  let caregivers = await prisma.caregiver.findMany({
     where,
-    include: servantInclude,
+    include: caregiverInclude,
     orderBy: { rating: "desc" }
   });
 
-  servants = servants.filter((s) => servantCoversLocation(s, lat, lng, radius));
+  caregivers = caregivers.filter((c) => caregiverCoversLocation(c, lat, lng, radius));
 
-  const total = servants.length;
-  const paged = servants.slice(skip, skip + limit);
+  const total = caregivers.length;
+  const paged = caregivers.slice(skip, skip + limit);
 
-  sendSuccess(res, { servants: paged, pagination: { page, limit, total } });
+  sendSuccess(res, { caregivers: paged, pagination: { page, limit, total } });
 };
 
-exports.getServant = async (req, res) => {
+exports.getCaregiver = async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const servant = await prisma.servant.findUnique({
+  const caregiver = await prisma.caregiver.findUnique({
     where: { id },
     include: {
-      ...servantInclude,
+      ...caregiverInclude,
       bookings: {
         where: { status: "COMPLETED", review: { isNot: null } },
-        include: { review: true, houseOwner: { include: { user: { select: { name: true } } } } },
+        include: { review: true, parent: { include: { user: { select: { name: true } } } } },
         take: 5,
         orderBy: { createdAt: "desc" }
       }
     }
   });
 
-  if (!servant) throw new ApiError(404, "Servant not found");
-  if (req.user.role === "HOUSE_OWNER") {
-    if (servant.verificationStatus !== "VERIFIED") {
-      throw new ApiError(404, "Servant not found");
+  if (!caregiver) throw new ApiError(404, "Caregiver not found");
+  if (req.user.role === "PARENT") {
+    if (caregiver.verificationStatus !== "VERIFIED") {
+      throw new ApiError(404, "Caregiver not found");
     }
     if (
       process.env.REQUIRE_AADHAAR_VERIFICATION !== "false" &&
-      !servant.aadhaarVerified
+      !caregiver.aadhaarVerified
     ) {
-      throw new ApiError(404, "Servant not found");
+      throw new ApiError(404, "Caregiver not found");
     }
 
-    const { lat, lng } = await resolveHouseOwnerCoords(
+    const { lat, lng } = await resolveParentCoords(
       req.user.id,
       req.query.latitude,
       req.query.longitude
     );
     if (lat != null && lng != null && !Number.isNaN(lat) && !Number.isNaN(lng)) {
-      if (!servantCoversLocation(servant, lat, lng)) {
-        throw new ApiError(404, "Servant not found");
+      if (!caregiverCoversLocation(caregiver, lat, lng)) {
+        throw new ApiError(404, "Caregiver not found");
       }
     }
   }
 
-  sendSuccess(res, { servant });
+  sendSuccess(res, { caregiver });
 };
 
 exports.getMyProfile = async (req, res) => {
-  const servant = await prisma.servant.findUnique({
+  const caregiver = await prisma.caregiver.findUnique({
     where: { userId: req.user.id },
-    include: servantInclude
+    include: caregiverInclude
   });
-  if (!servant) throw new ApiError(404, "Servant profile not found");
-  sendSuccess(res, { servant });
+  if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
+  sendSuccess(res, { caregiver });
 };
 
 exports.updateMyProfile = async (req, res) => {
@@ -158,13 +192,13 @@ exports.updateMyProfile = async (req, res) => {
     bankUpiId
   } = req.body;
 
-  const servant = await prisma.servant.findUnique({
+  const caregiver = await prisma.caregiver.findUnique({
     where: { userId: req.user.id }
   });
-  if (!servant) throw new ApiError(404, "Servant profile not found");
+  if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
 
-  const updated = await prisma.servant.update({
-    where: { id: servant.id },
+  const updated = await prisma.caregiver.update({
+    where: { id: caregiver.id },
     data: {
       ...(bio !== undefined && { bio }),
       ...(profilePhoto !== undefined && { profilePhoto }),
@@ -187,25 +221,25 @@ exports.updateMyProfile = async (req, res) => {
       }),
       ...(bankUpiId !== undefined && { bankUpiId: bankUpiId?.trim() || null })
     },
-    include: servantInclude
+    include: caregiverInclude
   });
 
-  sendSuccess(res, { servant: updated });
+  sendSuccess(res, { caregiver: updated });
 };
 
 exports.getMySchedule = async (req, res) => {
-  const servant = await prisma.servant.findUnique({
+  const caregiver = await prisma.caregiver.findUnique({
     where: { userId: req.user.id }
   });
-  if (!servant) throw new ApiError(404, "Servant profile not found");
+  if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
 
   const bookings = await prisma.booking.findMany({
     where: {
-      servantId: servant.id,
+      caregiverId: caregiver.id,
       status: { in: ["PENDING", "CONFIRMED", "ACTIVE"] }
     },
     include: {
-      houseOwner: { include: { user: { select: { name: true, phone: true } } } }
+      parent: { include: { user: { select: { name: true, phone: true } } } }
     },
     orderBy: { createdAt: "asc" }
   });
@@ -229,23 +263,23 @@ exports.getMySchedule = async (req, res) => {
 };
 
 exports.getMyTimeEntries = async (req, res) => {
-  const servant = await prisma.servant.findUnique({
+  const caregiver = await prisma.caregiver.findUnique({
     where: { userId: req.user.id }
   });
-  if (!servant) throw new ApiError(404, "Servant profile not found");
+  if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
 
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
 
   const [entries, total] = await Promise.all([
     prisma.timeEntry.findMany({
-      where: { servantId: servant.id },
+      where: { caregiverId: caregiver.id },
       include: { booking: { select: { id: true, bookingType: true, address: true } } },
       orderBy: { date: "desc" },
       skip: (page - 1) * limit,
       take: limit
     }),
-    prisma.timeEntry.count({ where: { servantId: servant.id } })
+    prisma.timeEntry.count({ where: { caregiverId: caregiver.id } })
   ]);
 
   sendSuccess(res, { entries, pagination: { page, limit, total } });

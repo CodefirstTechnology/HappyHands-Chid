@@ -3,23 +3,23 @@ const prisma = require("../config/prisma");
 /** Fixed master role IDs — must match Role table seed data. */
 const ROLE_IDS = {
   ADMIN: 1,
-  AGENT: 2,
-  SERVANT: 3,
-  HOUSE_OWNER: 4
+  COORDINATOR: 2,
+  CAREGIVER: 3,
+  PARENT: 4
 };
 
 const ROLE_CODES = {
   1: "ADMIN",
-  2: "AGENT",
-  3: "SERVANT",
-  4: "HOUSE_OWNER"
+  2: "COORDINATOR",
+  3: "CAREGIVER",
+  4: "PARENT"
 };
 
 const MASTER_ROLES = [
   { id: ROLE_IDS.ADMIN, code: "ADMIN", label: "Admin" },
-  { id: ROLE_IDS.AGENT, code: "AGENT", label: "Agent" },
-  { id: ROLE_IDS.SERVANT, code: "SERVANT", label: "Servant" },
-  { id: ROLE_IDS.HOUSE_OWNER, code: "HOUSE_OWNER", label: "House Owner" }
+  { id: ROLE_IDS.COORDINATOR, code: "COORDINATOR", label: "Coordinator" },
+  { id: ROLE_IDS.CAREGIVER, code: "CAREGIVER", label: "Caregiver" },
+  { id: ROLE_IDS.PARENT, code: "PARENT", label: "Parent" }
 ];
 
 const userWithRoleInclude = { role: true };

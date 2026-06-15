@@ -35,7 +35,7 @@ export default ({ config }) => ({
       'expo-location',
       {
         locationWhenInUsePermission:
-          'StaffEra uses your location to set your home address and find nearby help.',
+          'ChildCare uses your location to set your home address and find nearby caregivers.',
       },
     ],
   ],

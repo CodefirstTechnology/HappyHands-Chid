@@ -21,7 +21,7 @@ export function buildReportFromForm(form, skillsCatalog = [], files = {}) {
     (code) => skillsCatalog.find((s) => s.code === code)?.label || code.replace(/_/g, ' '),
   )
   return {
-    title: 'StaffEra — Servant onboarding report',
+    title: 'ChildCare — Caregiver onboarding report',
     generatedAt: new Date().toLocaleString('en-IN'),
     personal: {
       name: form.name,
@@ -61,7 +61,7 @@ export function buildReportFromForm(form, skillsCatalog = [], files = {}) {
       upiId: form.bankUpiId,
     },
     verificationStatus: 'Draft (not yet submitted)',
-    servantId: null,
+    caregiverId: null,
   }
 }
 
@@ -81,9 +81,9 @@ export function buildReportFromFormSubmitted(form, skills, files, servant) {
 export function buildReportFromServant(servant) {
   const u = servant.user || {}
   return {
-    title: 'StaffEra — Servant onboarding report',
+    title: 'ChildCare — Caregiver onboarding report',
     generatedAt: new Date().toLocaleString('en-IN'),
-    servantId: servant.id,
+    caregiverId: servant.id,
     personal: {
       name: u.name,
       email: u.email,
@@ -153,19 +153,19 @@ function reportHtml(data) {
   <title>${esc(data.title)}</title>
   <style>
     body { font-family: system-ui, sans-serif; margin: 2rem; color: #1b1b21; max-width: 720px; }
-    h1 { color: #15157d; font-size: 1.5rem; margin-bottom: 0.25rem; }
+    h1 { color: #1B6CA8; font-size: 1.5rem; margin-bottom: 0.25rem; }
     .meta { color: #464652; font-size: 0.875rem; margin-bottom: 1.5rem; }
     h2 { font-size: 1rem; color: #7d44a4; margin: 1.25rem 0 0.5rem; border-bottom: 1px solid #e5e5ef; padding-bottom: 0.25rem; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
     th { text-align: left; width: 38%; padding: 0.4rem 0.5rem 0.4rem 0; color: #464652; font-weight: 600; vertical-align: top; }
     td { padding: 0.4rem 0; }
-    .status { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: #e1e0ff; color: #15157d; font-size: 0.8rem; font-weight: 600; }
+    .status { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 999px; background: #e1f0fa; color: #1B6CA8; font-size: 0.8rem; font-weight: 600; }
     @media print { body { margin: 1rem; } }
   </style>
 </head>
 <body>
   <h1>${esc(data.title)}</h1>
-  <p class="meta">Generated ${esc(data.generatedAt)}${data.servantId ? ` · Servant ID ${data.servantId}` : ''}</p>
+  <p class="meta">Generated ${esc(data.generatedAt)}${data.caregiverId ? ` · Servant ID ${data.caregiverId}` : ''}</p>
   <p><span class="status">${esc(data.verificationStatus)}</span></p>
 
   <h2>Personal information</h2>
@@ -220,7 +220,7 @@ function reportHtml(data) {
   ${data.rejectionReason ? `<p style="color:#ba1a1a"><strong>Rejection:</strong> ${esc(data.rejectionReason)}</p>` : ''}
   ${data.bookingsCount != null ? `<p class="meta">Bookings on record: ${data.bookingsCount}</p>` : ''}
 
-  <p class="meta" style="margin-top:2rem">StaffEra Agent Portal — confidential</p>
+  <p class="meta" style="margin-top:2rem">ChildCare Coordinator Portal — confidential</p>
 </body>
 </html>`
 }
@@ -240,7 +240,7 @@ export function downloadOnboardingReport(data, filenameBase = 'onboarding-report
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `staffera-${safeName || 'servant'}-report.html`
+  a.download = `childcare-${safeName || 'caregiver'}-report.html`
   document.body.appendChild(a)
   a.click()
   a.remove()

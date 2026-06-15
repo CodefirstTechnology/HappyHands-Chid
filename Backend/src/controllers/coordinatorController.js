@@ -13,13 +13,13 @@ const {
   userWithRoleInclude
 } = require("../services/roleService");
 const {
-  agentHasLocation,
+  coordinatorHasLocation,
   boundingBoxForRadius,
-  getAgentRadiusKm,
-  filterServantsNearAgent
+  getCoordinatorRadiusKm,
+  filterCaregiversNearCoordinator
 } = require("../services/locationService");
-const { assertAgentCanAccessServant } = require("../services/agentRegistrationService");
-const { getAgentAnnualRevenue } = require("../services/agentRevenueService");
+const { assertCoordinatorCanAccessCaregiver } = require("../services/coordinatorRegistrationService");
+const { getCoordinatorAnnualRevenue } = require("../services/coordinatorRevenueService");
 
 const parseSkills = (skills) => {
   if (!skills) return [];
@@ -47,53 +47,53 @@ const parseBool = (value, fallback = true) => {
   return String(value).toLowerCase() === "true";
 };
 
-const generateServantPassword = () => {
+const generateCaregiverPassword = () => {
   const part = crypto.randomBytes(4).toString("hex");
   return `St${part}1`;
 };
 
-const getAgent = async (userId) => {
-  const agent = await prisma.agent.findUnique({ where: { userId } });
-  if (!agent) throw new ApiError(403, "Agent profile required");
-  return agent;
+const getCoordinator = async (userId) => {
+  const coordinator = await prisma.coordinator.findUnique({ where: { userId } });
+  if (!coordinator) throw new ApiError(403, "Coordinator profile required");
+  return coordinator;
 };
 
-/** AGENT: scoped to own servants. ADMIN: full access (no agent profile required). */
-const resolveAgentScope = async (user) => {
+/** COORDINATOR: scoped to own caregivers. ADMIN: full access (no coordinator profile required). */
+const resolveCoordinatorScope = async (user) => {
   if (getRoleCode(user) === "ADMIN") {
-    return { isAdmin: true, agent: null, agentId: null };
+    return { isAdmin: true, coordinator: null, coordinatorId: null };
   }
-  const agent = await getAgent(user.id);
-  return { isAdmin: false, agent, agentId: agent.id };
+  const coordinator = await getCoordinator(user.id);
+  return { isAdmin: false, coordinator, coordinatorId: coordinator.id };
 };
 
-/** Agent onboarded / assigned staff (not pending app sign-ups). */
-const servantWhereForScope = (scope, extra = {}) => {
+/** Coordinator onboarded / assigned staff (not pending app sign-ups). */
+const caregiverWhereForScope = (scope, extra = {}) => {
   if (scope.isAdmin) return { ...extra };
   return {
     AND: [
-      { agentId: scope.agentId, registrationSource: "AGENT" },
+      { coordinatorId: scope.coordinatorId, registrationSource: "COORDINATOR" },
       ...(Object.keys(extra).length ? [extra] : [])
     ]
   };
 };
 
-/** Pending sign-ups from the Servant app — separate from the servants pipeline. */
+/** Pending sign-ups from the Caregiver app — separate from the caregivers pipeline. */
 const registrationWhereForScope = (scope, extra = {}) => {
-  const base = { registrationSource: "SELF", agentId: null };
+  const base = { registrationSource: "SELF", coordinatorId: null };
   if (scope.isAdmin) return { ...base, ...extra };
   return { ...base, ...extra };
 };
 
-/** Single-record access: assigned servants or unassigned app registration. */
+/** Single-record access: assigned caregivers or unassigned app registration. */
 const recordWhereForScope = (scope, extra = {}) => {
   if (scope.isAdmin) return { ...extra };
   return {
     AND: [
       {
         OR: [
-          { agentId: scope.agentId, registrationSource: "AGENT" },
-          { registrationSource: "SELF", agentId: null }
+          { coordinatorId: scope.coordinatorId, registrationSource: "COORDINATOR" },
+          { registrationSource: "SELF", coordinatorId: null }
         ]
       },
       ...(Object.keys(extra).length ? [extra] : [])
@@ -101,21 +101,21 @@ const recordWhereForScope = (scope, extra = {}) => {
   };
 };
 
-const assertAgentLocationSet = async (agentId) => {
-  const agent = await prisma.agent.findUnique({ where: { id: agentId } });
+const assertCoordinatorLocationSet = async (coordinatorId) => {
+  const coordinator = await prisma.coordinator.findUnique({ where: { id: coordinatorId } });
   if (
-    !agent?.address?.trim() ||
-    agent.latitude == null ||
-    agent.longitude == null
+    !coordinator?.address?.trim() ||
+    coordinator.latitude == null ||
+    coordinator.longitude == null
   ) {
     throw new ApiError(
       400,
-      "Set your agency location in Profile settings before onboarding servants"
+      "Set your agency location in Profile settings before onboarding caregivers"
     );
   }
 };
 
-const servantInclude = {
+const caregiverInclude = {
   user: {
     select: {
       id: true,
@@ -123,7 +123,7 @@ const servantInclude = {
       email: true,
       phone: true,
       isActive: true,
-      agentSetPassword: true
+      coordinatorSetPassword: true
     }
   },
   skills: true,
@@ -134,21 +134,21 @@ const applyAppRegistrationPassword = async (userId, email, plainPassword) => {
   const hash = await bcrypt.hash(plainPassword, 12);
   await prisma.user.update({
     where: { id: userId },
-    data: { password: hash, agentSetPassword: true }
+    data: { password: hash, coordinatorSetPassword: true }
   });
   return { email, password: plainPassword };
 };
 
-exports.createServant = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
-  if (!scope.isAdmin && scope.agentId) {
-    await assertAgentLocationSet(scope.agentId);
+exports.createCaregiver = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
+  if (!scope.isAdmin && scope.coordinatorId) {
+    await assertCoordinatorLocationSet(scope.coordinatorId);
   }
-  const assignAgentId = scope.isAdmin
-    ? req.body.agentId
-      ? parseInt(req.body.agentId, 10)
+  const assignCoordinatorId = scope.isAdmin
+    ? req.body.coordinatorId
+      ? parseInt(req.body.coordinatorId, 10)
       : null
-    : scope.agentId;
+    : scope.coordinatorId;
   const {
     name,
     email: rawEmail,
@@ -176,7 +176,12 @@ exports.createServant = async (req, res) => {
     bankAccountNumber,
     bankName,
     bankIfsc,
-    bankUpiId
+    bankUpiId,
+    ageRangesServed,
+    maxChildren,
+    hasCprCert,
+    hasFirstAidCert,
+    childcareNote
   } = req.body;
 
   const email = normalizeEmail(rawEmail);
@@ -212,10 +217,10 @@ exports.createServant = async (req, res) => {
       email,
       phone,
       password: hashed,
-      roleId: ROLE_IDS.SERVANT,
-      servant: {
+      roleId: ROLE_IDS.CAREGIVER,
+      caregiver: {
         create: {
-          agentId: assignAgentId,
+          coordinatorId: assignCoordinatorId,
           bio,
           experience: experience ? parseInt(experience, 10) : null,
           hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
@@ -232,7 +237,7 @@ exports.createServant = async (req, res) => {
           idProofUrl,
           profilePhoto,
           verificationStatus: "PENDING",
-          registrationSource: "AGENT",
+          registrationSource: "COORDINATOR",
           phoneVerified: !!phone,
           address: address?.trim() || null,
           city: city?.trim() || null,
@@ -243,20 +248,32 @@ exports.createServant = async (req, res) => {
           bankName: bankName?.trim() || null,
           bankIfsc: bankIfsc?.trim()?.toUpperCase() || null,
           bankUpiId: bankUpiId?.trim() || null,
+          ageRangesServed: Array.isArray(ageRangesServed)
+            ? ageRangesServed
+            : ageRangesServed
+              ? [String(ageRangesServed)]
+              : [],
+          maxChildren:
+            maxChildren !== undefined && maxChildren !== ""
+              ? parseInt(maxChildren, 10)
+              : Number(process.env.MAX_CHILDREN_DEFAULT) || 4,
+          hasCprCert: parseBool(hasCprCert, false),
+          hasFirstAidCert: parseBool(hasFirstAidCert, false),
+          childcareNote: childcareNote?.trim() || null,
           skills: {
             create: skillList.map((skillName) => ({ skillName }))
           }
         }
       }
     },
-    include: { servant: { include: servantInclude } }
+    include: { caregiver: { include: caregiverInclude } }
   });
 
-  sendSuccess(res, { servant: user.servant }, 201);
+  sendSuccess(res, { caregiver: user.caregiver }, 201);
 };
 
-exports.listServants = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
+exports.listCaregivers = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
   const { status, search, category } = req.query;
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(50, parseInt(req.query.limit, 10) || 20);
@@ -281,87 +298,87 @@ exports.listServants = async (req, res) => {
 
   let where = isRegistrationList
     ? registrationWhereForScope(scope, sharedFilters)
-    : servantWhereForScope(scope, {
-        ...(categoryKey === "mine" && scope.agentId ? { agentId: scope.agentId } : {}),
+    : caregiverWhereForScope(scope, {
+        ...(categoryKey === "mine" && scope.coordinatorId ? { coordinatorId: scope.coordinatorId } : {}),
         ...sharedFilters
       });
 
   let locationNotice = null;
 
-  if (isRegistrationList && !scope.isAdmin && scope.agentId) {
-    const agent = scope.agent || (await prisma.agent.findUnique({ where: { id: scope.agentId } }));
-    const agentRadiusKm = getAgentRadiusKm(agent);
+  if (isRegistrationList && !scope.isAdmin && scope.coordinatorId) {
+    const coordinator = scope.coordinator || (await prisma.coordinator.findUnique({ where: { id: scope.coordinatorId } }));
+    const coordinatorRadiusKm = getCoordinatorRadiusKm(coordinator);
 
-    if (!agentHasLocation(agent)) {
+    if (!coordinatorHasLocation(coordinator)) {
       return sendSuccess(res, {
-        servants: [],
+        caregivers: [],
         pagination: { page, limit, total: 0 },
         locationNotice:
-          `Set your agency location in Profile to receive registrations within ${agentRadiusKm} km.`
+          `Set your agency location in Profile to receive registrations within ${coordinatorRadiusKm} km.`
       });
     }
 
-    const box = boundingBoxForRadius(agent.latitude, agent.longitude, agentRadiusKm);
+    const box = boundingBoxForRadius(coordinator.latitude, coordinator.longitude, coordinatorRadiusKm);
     where = registrationWhereForScope(scope, {
       ...sharedFilters,
       ...box
     });
 
-    const candidates = await prisma.servant.findMany({
+    const candidates = await prisma.caregiver.findMany({
       where,
-      include: servantInclude,
+      include: caregiverInclude,
       orderBy: { createdAt: "desc" }
     });
 
-    const filtered = filterServantsNearAgent(candidates, agent, agentRadiusKm);
+    const filtered = filterCaregiversNearCoordinator(candidates, coordinator, coordinatorRadiusKm);
     const total = filtered.length;
-    const servants = filtered.slice((page - 1) * limit, page * limit);
+    const caregivers = filtered.slice((page - 1) * limit, page * limit);
 
     return sendSuccess(res, {
-      servants,
+      caregivers,
       pagination: { page, limit, total },
-      locationNotice: `Showing registrations within ${agentRadiusKm} km of your agency.`
+      locationNotice: `Showing registrations within ${coordinatorRadiusKm} km of your agency.`
     });
   }
 
-  const [servants, total] = await Promise.all([
-    prisma.servant.findMany({
+  const [caregivers, total] = await Promise.all([
+    prisma.caregiver.findMany({
       where,
-      include: servantInclude,
+      include: caregiverInclude,
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: "desc" }
     }),
-    prisma.servant.count({ where })
+    prisma.caregiver.count({ where })
   ]);
 
   sendSuccess(res, {
-    servants,
+    caregivers,
     pagination: { page, limit, total },
     ...(locationNotice ? { locationNotice } : {})
   });
 };
 
-const assertScopedServantAccess = async (scope, servant) => {
-  if (!servant) throw new ApiError(404, "Servant not found");
-  if (!scope.isAdmin && scope.agentId) {
-    const agent =
-      scope.agent || (await prisma.agent.findUnique({ where: { id: scope.agentId } }));
-    assertAgentCanAccessServant(scope, servant, agent);
+const assertScopedCaregiverAccess = async (scope, caregiver) => {
+  if (!caregiver) throw new ApiError(404, "Caregiver not found");
+  if (!scope.isAdmin && scope.coordinatorId) {
+    const coordinator =
+      scope.coordinator || (await prisma.coordinator.findUnique({ where: { id: scope.coordinatorId } }));
+    assertCoordinatorCanAccessCaregiver(scope, caregiver, coordinator);
   }
 };
 
-exports.getServant = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
+exports.getCaregiver = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
   const id = parseInt(req.params.id, 10);
 
-  const servant = await prisma.servant.findFirst({
+  const caregiver = await prisma.caregiver.findFirst({
     where: recordWhereForScope(scope, { id }),
     include: {
-      ...servantInclude,
+      ...caregiverInclude,
       bookings: {
         include: {
-          houseOwner: { include: { user: { select: { name: true } } } }
+          parent: { include: { user: { select: { name: true } } } }
         },
         orderBy: { createdAt: "desc" },
         take: 20
@@ -369,19 +386,19 @@ exports.getServant = async (req, res) => {
     }
   });
 
-  await assertScopedServantAccess(scope, servant);
-  sendSuccess(res, { servant });
+  await assertScopedCaregiverAccess(scope, caregiver);
+  sendSuccess(res, { caregiver });
 };
 
-exports.updateServant = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
+exports.updateCaregiver = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
   const id = parseInt(req.params.id, 10);
 
-  const existing = await prisma.servant.findFirst({
+  const existing = await prisma.caregiver.findFirst({
     where: recordWhereForScope(scope, { id }),
     include: { user: true }
   });
-  await assertScopedServantAccess(scope, existing);
+  await assertScopedCaregiverAccess(scope, existing);
 
   const {
     name,
@@ -437,7 +454,7 @@ exports.updateServant = async (req, res) => {
   let loginPassword =
     password && String(password).trim().length >= 6 ? String(password).trim() : null;
   if (isAppRegistration && generatePassword && !loginPassword) {
-    loginPassword = generateServantPassword();
+    loginPassword = generateCaregiverPassword();
   }
   if (password && String(password).trim().length > 0 && String(password).trim().length < 6) {
     throw new ApiError(400, "Password must be at least 6 characters");
@@ -445,14 +462,14 @@ exports.updateServant = async (req, res) => {
 
   let credentials = null;
 
-  const servant = await prisma.$transaction(async (tx) => {
+  const caregiver = await prisma.$transaction(async (tx) => {
     const userPatch = {
       ...(name && { name }),
       ...(phone !== undefined && { phone })
     };
     if (loginPassword && isAppRegistration) {
       userPatch.password = await bcrypt.hash(loginPassword, 12);
-      userPatch.agentSetPassword = true;
+      userPatch.coordinatorSetPassword = true;
       credentials = {
         email: existing.user.email,
         password: loginPassword
@@ -466,13 +483,13 @@ exports.updateServant = async (req, res) => {
     }
 
     if (skillList) {
-      await tx.servantSkill.deleteMany({ where: { servantId: id } });
-      await tx.servantSkill.createMany({
-        data: skillList.map((skillName) => ({ servantId: id, skillName }))
+      await tx.caregiverSkill.deleteMany({ where: { caregiverId: id } });
+      await tx.caregiverSkill.createMany({
+        data: skillList.map((skillName) => ({ caregiverId: id, skillName }))
       });
     }
 
-    return tx.servant.update({
+    return tx.caregiver.update({
       where: { id },
       data: {
         ...(bio !== undefined && { bio }),
@@ -522,23 +539,23 @@ exports.updateServant = async (req, res) => {
         }),
         ...(bankUpiId !== undefined && { bankUpiId: bankUpiId?.trim() || null })
       },
-      include: servantInclude
+      include: caregiverInclude
     });
   });
 
-  sendSuccess(res, { servant, ...(credentials ? { credentials } : {}) });
+  sendSuccess(res, { caregiver, ...(credentials ? { credentials } : {}) });
 };
 
-exports.setServantPassword = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
+exports.setCaregiverPassword = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
   const id = parseInt(req.params.id, 10);
   const { password, generatePassword } = req.body;
 
-  const existing = await prisma.servant.findFirst({
+  const existing = await prisma.caregiver.findFirst({
     where: recordWhereForScope(scope, { id }),
     include: { user: true }
   });
-  await assertScopedServantAccess(scope, existing);
+  await assertScopedCaregiverAccess(scope, existing);
 
   const isAppRegistration =
     existing.registrationSource === "SELF" || existing.user.isActive === false;
@@ -550,7 +567,7 @@ exports.setServantPassword = async (req, res) => {
   let loginPassword =
     password && String(password).trim().length >= 6 ? String(password).trim() : null;
   if (generatePassword && !loginPassword) {
-    loginPassword = generateServantPassword();
+    loginPassword = generateCaregiverPassword();
   }
   if (!loginPassword) {
     throw new ApiError(400, "Provide a password (min 6 characters) or use generate password");
@@ -562,28 +579,28 @@ exports.setServantPassword = async (req, res) => {
     loginPassword
   );
 
-  const servant = await prisma.servant.findFirst({
+  const caregiver = await prisma.caregiver.findFirst({
     where: { id },
-    include: servantInclude
+    include: caregiverInclude
   });
 
   sendSuccess(res, {
-    servant,
+    caregiver,
     credentials,
-    message: "Login password saved. Share these details with the helper, then approve their profile."
+    message: "Login password saved. Share these details with the caregiver, then approve their profile."
   });
 };
 
-exports.verifyServant = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
+exports.verifyCaregiver = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
   const id = parseInt(req.params.id, 10);
   const { status, reason, password, generatePassword } = req.body;
 
-  const existing = await prisma.servant.findFirst({
+  const existing = await prisma.caregiver.findFirst({
     where: recordWhereForScope(scope, { id }),
     include: { user: true }
   });
-  await assertScopedServantAccess(scope, existing);
+  await assertScopedCaregiverAccess(scope, existing);
 
   const isAppRegistration =
     existing.registrationSource === "SELF" || existing.user.isActive === false;
@@ -598,15 +615,15 @@ exports.verifyServant = async (req, res) => {
   ) {
     throw new ApiError(
       400,
-      "Aadhaar Offline XML verification is required before approving this servant"
+      "Aadhaar Offline XML verification is required before approving this caregiver"
     );
   }
 
   if (status === "VERIFIED" && isAppRegistration) {
     if (!loginPassword && generatePassword) {
-      loginPassword = generateServantPassword();
+      loginPassword = generateCaregiverPassword();
     }
-    if (!loginPassword && !existing.user.agentSetPassword) {
+    if (!loginPassword && !existing.user.coordinatorSetPassword) {
       throw new ApiError(
         400,
         "Set a login password first (min 6 characters), or use generate password when approving"
@@ -616,17 +633,17 @@ exports.verifyServant = async (req, res) => {
     throw new ApiError(400, "Password must be at least 6 characters when setting login");
   }
 
-  const servant = await prisma.servant.update({
+  const caregiver = await prisma.caregiver.update({
     where: { id },
     data: {
       verificationStatus: status,
       verifiedAt: status === "VERIFIED" ? new Date() : null,
       rejectionReason: status === "REJECTED" ? reason : null,
-      ...(status === "VERIFIED" && isAppRegistration && scope.agentId
-        ? { agentId: scope.agentId, registrationSource: "AGENT" }
+      ...(status === "VERIFIED" && isAppRegistration && scope.coordinatorId
+        ? { coordinatorId: scope.coordinatorId, registrationSource: "COORDINATOR" }
         : {})
     },
-    include: servantInclude
+    include: caregiverInclude
   });
 
   let credentials = null;
@@ -635,7 +652,7 @@ exports.verifyServant = async (req, res) => {
     const userData = { isActive: true };
     if (loginPassword) {
       userData.password = await bcrypt.hash(loginPassword, 12);
-      userData.agentSetPassword = true;
+      userData.coordinatorSetPassword = true;
       credentials = {
         email: existing.user.email,
         password: loginPassword
@@ -649,60 +666,60 @@ exports.verifyServant = async (req, res) => {
       userId: existing.userId,
       title: "Profile verified",
       body: loginPassword
-        ? "Your profile is verified. Use the email and password your agent shared to sign in."
-        : "Your servant profile has been verified",
-      type: "SERVANT_VERIFIED",
-      data: { servantId: id }
+        ? "Your profile is verified. Use the email and password your coordinator shared to sign in."
+        : "Your caregiver profile has been verified",
+      type: "CAREGIVER_VERIFIED",
+      data: { caregiverId: id }
     });
   }
 
-  sendSuccess(res, { servant, ...(credentials ? { credentials } : {}) });
+  sendSuccess(res, { caregiver, ...(credentials ? { credentials } : {}) });
 };
 
 exports.uploadIdProof = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
+  const scope = await resolveCoordinatorScope(req.user);
   const id = parseInt(req.params.id, 10);
 
   if (!req.file) throw new ApiError(400, "No file uploaded");
 
-  const existing = await prisma.servant.findFirst({
+  const existing = await prisma.caregiver.findFirst({
     where: recordWhereForScope(scope, { id })
   });
-  await assertScopedServantAccess(scope, existing);
+  await assertScopedCaregiverAccess(scope, existing);
 
   const idProofUrl = `/uploads/${req.file.filename}`;
-  const servant = await prisma.servant.update({
+  const caregiver = await prisma.caregiver.update({
     where: { id },
     data: { idProofUrl },
-    include: servantInclude
+    include: caregiverInclude
   });
 
-  sendSuccess(res, { servant });
+  sendSuccess(res, { caregiver });
 };
 
 exports.getStats = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
+  const scope = await resolveCoordinatorScope(req.user);
   if (scope.isAdmin) {
-    throw new ApiError(403, "Sign in as a field agent to view agency revenue");
+    throw new ApiError(403, "Sign in as a field coordinator to view agency revenue");
   }
 
   const year = req.query.year ? parseInt(req.query.year, 10) : new Date().getFullYear();
-  const stats = await getAgentAnnualRevenue(scope.agentId, year);
+  const stats = await getCoordinatorAnnualRevenue(scope.coordinatorId, year);
   sendSuccess(res, stats);
 };
 
 exports.updateProfile = async (req, res) => {
-  const agent = await prisma.agent.findUnique({
+  const coordinator = await prisma.coordinator.findUnique({
     where: { userId: req.user.id }
   });
-  if (!agent) {
-    throw new ApiError(404, "Agent profile not found. Contact support to link your agency.");
+  if (!coordinator) {
+    throw new ApiError(404, "Coordinator profile not found. Contact support to link your agency.");
   }
 
   const { agencyName, address, city, latitude, longitude, serviceRadiusKm } = req.body;
 
-  const updated = await prisma.agent.update({
-    where: { id: agent.id },
+  const updated = await prisma.coordinator.update({
+    where: { id: coordinator.id },
     data: {
       ...(agencyName !== undefined && { agencyName: agencyName?.trim() || null }),
       address: address.trim(),
@@ -718,57 +735,65 @@ exports.updateProfile = async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
     include: {
-      houseOwner: true,
-      servant: { include: { skills: true, zones: true } },
-      agent: true,
+      parent: true,
+      caregiver: { include: { skills: true, zones: true } },
+      coordinator: true,
       ...userWithRoleInclude
     }
   });
 
-  sendSuccess(res, { agent: updated, user: serializeUser(user) });
+  sendSuccess(res, { coordinator: updated, user: serializeUser(user) });
 };
 
-const getScopedServant = async (scope, servantId) => {
-  const servant = await prisma.servant.findFirst({
-    where: recordWhereForScope(scope, { id: servantId })
+const getScopedCaregiver = async (scope, caregiverId) => {
+  const caregiver = await prisma.caregiver.findFirst({
+    where: recordWhereForScope(scope, { id: caregiverId })
   });
-  await assertScopedServantAccess(scope, servant);
-  return servant;
+  await assertScopedCaregiverAccess(scope, caregiver);
+  return caregiver;
 };
 
-const getScopedServantZone = async (scope, servantId, zoneId) => {
-  const servant = await getScopedServant(scope, servantId);
+const getScopedCaregiverZone = async (scope, caregiverId, zoneId) => {
+  const caregiver = await getScopedCaregiver(scope, caregiverId);
   const zone = await prisma.zone.findFirst({
-    where: { id: zoneId, servantId: servant.id }
+    where: { id: zoneId, caregiverId: caregiver.id }
   });
   if (!zone) throw new ApiError(404, "Zone not found");
-  return { servant, zone };
+  return { caregiver, zone };
 };
 
-exports.listServantZones = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
-  const servantId = parseInt(req.params.id, 10);
-  await getScopedServant(scope, servantId);
+const parseCaregiverIdParam = (req) => {
+  const caregiverId = parseInt(req.params.id, 10);
+  if (!Number.isFinite(caregiverId)) {
+    throw new ApiError(400, "Invalid caregiver id");
+  }
+  return caregiverId;
+};
+
+exports.listCaregiverZones = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
+  const caregiverId = parseCaregiverIdParam(req);
+  await getScopedCaregiver(scope, caregiverId);
 
   const zones = await prisma.zone.findMany({
-    where: { servantId },
+    where: { caregiverId },
     orderBy: { name: "asc" }
   });
 
   sendSuccess(res, { zones });
 };
 
-exports.createServantZone = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
-  const servantId = parseInt(req.params.id, 10);
-  await getScopedServant(scope, servantId);
+exports.createCaregiverZone = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
+  const caregiverId = parseCaregiverIdParam(req);
+  await getScopedCaregiver(scope, caregiverId);
 
   const { name, description, city, latitude, longitude } = req.body;
   if (!name?.trim()) throw new ApiError(400, "Zone name is required");
 
   const zone = await prisma.zone.create({
     data: {
-      servantId,
+      caregiverId,
       name: name.trim(),
       description: description?.trim() || null,
       city: city?.trim() || null,
@@ -780,11 +805,11 @@ exports.createServantZone = async (req, res) => {
   sendSuccess(res, { zone }, 201);
 };
 
-exports.updateServantZone = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
-  const servantId = parseInt(req.params.id, 10);
+exports.updateCaregiverZone = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
+  const caregiverId = parseCaregiverIdParam(req);
   const zoneId = parseInt(req.params.zoneId, 10);
-  await getScopedServantZone(scope, servantId, zoneId);
+  await getScopedCaregiverZone(scope, caregiverId, zoneId);
 
   const { name, description, city, latitude, longitude } = req.body;
   const zone = await prisma.zone.update({
@@ -803,11 +828,11 @@ exports.updateServantZone = async (req, res) => {
   sendSuccess(res, { zone });
 };
 
-exports.deleteServantZone = async (req, res) => {
-  const scope = await resolveAgentScope(req.user);
-  const servantId = parseInt(req.params.id, 10);
+exports.deleteCaregiverZone = async (req, res) => {
+  const scope = await resolveCoordinatorScope(req.user);
+  const caregiverId = parseCaregiverIdParam(req);
   const zoneId = parseInt(req.params.zoneId, 10);
-  await getScopedServantZone(scope, servantId, zoneId);
+  await getScopedCaregiverZone(scope, caregiverId, zoneId);
 
   await prisma.zone.delete({ where: { id: zoneId } });
   sendSuccess(res, { message: "Zone deleted" });

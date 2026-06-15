@@ -25,15 +25,15 @@ export default function ServantDetailScreen() {
     if (liveLocation?.latitude != null && liveLocation?.longitude != null) {
       return liveLocation;
     }
-    const ho = user?.houseOwner;
+    const ho = user?.parent;
     if (ho?.latitude != null && ho?.longitude != null) {
       return { latitude: ho.latitude, longitude: ho.longitude };
     }
     return null;
-  }, [liveLocation, user?.houseOwner]);
+  }, [liveLocation, user?.parent]);
 
   const { data: servant, isLoading, error } = useQuery({
-    queryKey: ['servant', id, searchLocation?.latitude, searchLocation?.longitude],
+    queryKey: ['caregiver', id, searchLocation?.latitude, searchLocation?.longitude],
     enabled: !!id,
     queryFn: async () => {
       const params: Record<string, number> = {};
@@ -41,8 +41,8 @@ export default function ServantDetailScreen() {
         params.latitude = searchLocation.latitude;
         params.longitude = searchLocation.longitude;
       }
-      const res = await api.get(`/servants/${id}`, { params });
-      return res.data.data.servant;
+      const res = await api.get(`/caregivers/${id}`, { params });
+      return res.data.data.caregiver;
     },
   });
 
@@ -114,7 +114,7 @@ export default function ServantDetailScreen() {
         onPress={() =>
           router.push({
             pathname: '/(main)/bookings/new',
-            params: { servantId: String(servant.id) },
+            params: { caregiverId: String(servant.id) },
           })
         }
         style={{ marginTop: 20 }}

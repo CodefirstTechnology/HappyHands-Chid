@@ -26,11 +26,11 @@ const emptyDraft = () => ({
 
 /**
  * Agent-managed service zones for a servant.
- * - servantId set: persists via API (edit flow)
+ * - caregiverId set: persists via API (edit flow)
  * - draftMode: local list only (onboarding flow)
  */
 export function ServiceZonesEditor({
-  servantId,
+  caregiverId,
   zones: initialZones = [],
   draftMode = false,
   draftZones = [],
@@ -110,9 +110,9 @@ export function ServiceZonesEditor({
   }
 
   const createMutation = useMutation({
-    mutationFn: (payload) => api.post(`/agent/servants/${servantId}/zones`, payload),
+    mutationFn: (payload) => api.post(`/coordinator/caregivers/${caregiverId}/zones`, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['servant', String(servantId)] })
+      qc.invalidateQueries({ queryKey: ['caregiver', String(caregiverId)] })
       resetForm()
     },
     onError: (e) => setError(e.response?.data?.message || 'Could not save zone'),
@@ -120,17 +120,17 @@ export function ServiceZonesEditor({
 
   const updateMutation = useMutation({
     mutationFn: ({ zoneId, payload }) =>
-      api.patch(`/agent/servants/${servantId}/zones/${zoneId}`, payload),
+      api.patch(`/coordinator/caregivers/${caregiverId}/zones/${zoneId}`, payload),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['servant', String(servantId)] })
+      qc.invalidateQueries({ queryKey: ['caregiver', String(caregiverId)] })
       resetForm()
     },
     onError: (e) => setError(e.response?.data?.message || 'Could not save zone'),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (zoneId) => api.delete(`/agent/servants/${servantId}/zones/${zoneId}`),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['servant', String(servantId)] }),
+    mutationFn: (zoneId) => api.delete(`/coordinator/caregivers/${caregiverId}/zones/${zoneId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['caregiver', String(caregiverId)] }),
     onError: (e) => setError(e.response?.data?.message || 'Could not delete zone'),
   })
 
@@ -257,9 +257,9 @@ export function ServiceZonesEditor({
   )
 }
 
-export async function createDraftZonesForServant(servantId, draftZones) {
+export async function createDraftZonesForServant(caregiverId, draftZones) {
   for (const zone of draftZones) {
-    await api.post(`/agent/servants/${servantId}/zones`, {
+    await api.post(`/coordinator/caregivers/${caregiverId}/zones`, {
       name: zone.name,
       description: zone.description || undefined,
       city: zone.city || undefined,

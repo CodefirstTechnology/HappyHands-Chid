@@ -1,6 +1,19 @@
 const { z } = require("zod");
 const { optionalNumber } = require("./zodHelpers");
 
+const parseAgeRanges = (val) => {
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : val.trim() ? [val] : [];
+    } catch {
+      return val.trim() ? val.split(",").map((s) => s.trim()).filter(Boolean) : [];
+    }
+  }
+  return [];
+};
+
 const bankDetailsFields = {
   bankAccountHolder: z.string().optional(),
   bankAccountNumber: z.string().optional(),
@@ -9,7 +22,7 @@ const bankDetailsFields = {
   bankUpiId: z.string().optional()
 };
 
-const updateServantMeSchema = z.object({
+const updateCaregiverMeSchema = z.object({
   body: z.object({
     bio: z.string().optional(),
     profilePhoto: z.string().optional(),
@@ -25,7 +38,7 @@ const updateServantMeSchema = z.object({
   })
 });
 
-const createServantSchema = z.object({
+const createCaregiverSchema = z.object({
   body: z.object({
     name: z.string().min(2),
     email: z.string().email(),
@@ -49,11 +62,16 @@ const createServantSchema = z.object({
     city: z.string().optional(),
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
+    ageRangesServed: z.preprocess(parseAgeRanges, z.array(z.string()).optional()),
+    maxChildren: optionalNumber(),
+    hasCprCert: z.coerce.boolean().optional(),
+    hasFirstAidCert: z.coerce.boolean().optional(),
+    childcareNote: z.string().optional(),
     ...bankDetailsFields
   })
 });
 
-const updateServantSchema = z.object({
+const updateCaregiverSchema = z.object({
   body: z.object({
     name: z.string().min(2).optional(),
     phone: z.string().optional(),
@@ -75,18 +93,23 @@ const updateServantSchema = z.object({
     availabilityNotes: z.string().optional(),
     idProofType: z.string().optional(),
     skills: z.union([z.string(), z.array(z.string())]).optional(),
+    ageRangesServed: z.preprocess(parseAgeRanges, z.array(z.string()).optional()),
+    maxChildren: optionalNumber(),
+    hasCprCert: z.coerce.boolean().optional(),
+    hasFirstAidCert: z.coerce.boolean().optional(),
+    childcareNote: z.string().optional(),
     ...bankDetailsFields
   })
 });
 
-const setServantPasswordSchema = z.object({
+const setCaregiverPasswordSchema = z.object({
   body: z.object({
     password: z.string().min(6).optional(),
     generatePassword: z.coerce.boolean().optional()
   })
 });
 
-const verifyServantSchema = z.object({
+const verifyCaregiverSchema = z.object({
   body: z.object({
     status: z.enum(["VERIFIED", "REJECTED", "UNDER_REVIEW", "PENDING"]),
     reason: z.string().optional(),
@@ -96,9 +119,9 @@ const verifyServantSchema = z.object({
 });
 
 module.exports = {
-  updateServantMeSchema,
-  createServantSchema,
-  updateServantSchema,
-  setServantPasswordSchema,
-  verifyServantSchema
+  updateCaregiverMeSchema,
+  createCaregiverSchema,
+  updateCaregiverSchema,
+  setCaregiverPasswordSchema,
+  verifyCaregiverSchema
 };

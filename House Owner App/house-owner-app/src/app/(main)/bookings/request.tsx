@@ -73,14 +73,14 @@ export default function AreaBookingRequestScreen() {
   }, [liveLocation]);
 
   useEffect(() => {
-    const ho = user?.houseOwner;
+    const ho = user?.parent;
     if (!ho) return;
     setAddressUnit({
       flatNo: ho.flatNo || '',
       building: ho.building || '',
       area: ho.area || '',
     });
-  }, [user?.houseOwner]);
+  }, [user?.parent]);
 
   useEffect(() => {
     const syncSlots = () =>
@@ -95,7 +95,7 @@ export default function AreaBookingRequestScreen() {
     : '';
 
   const { data: nearbyHelpers = [] } = useQuery({
-    queryKey: ['servants', selectedSkill, location?.latitude, location?.longitude],
+    queryKey: ['caregivers', selectedSkill, location?.latitude, location?.longitude],
     enabled:
       !!selectedSkill &&
       location?.latitude != null &&
@@ -103,14 +103,14 @@ export default function AreaBookingRequestScreen() {
       !Number.isNaN(location.latitude) &&
       !Number.isNaN(location.longitude),
     queryFn: async () => {
-      const res = await api.get('/servants', {
+      const res = await api.get('/caregivers', {
         params: {
           skill: selectedSkill,
           latitude: location!.latitude,
           longitude: location!.longitude,
         },
       });
-      return res.data.data.servants as { user: { name: string } }[];
+      return res.data.data.caregivers as { user: { name: string } }[];
     },
   });
 

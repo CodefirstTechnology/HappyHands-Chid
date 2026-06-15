@@ -8,7 +8,7 @@ const radiusKmField = z.coerce
   .min(1, "Radius must be at least 1 km")
   .max(100, "Radius cannot exceed 100 km");
 
-const updateAgentProfileSchema = z.object({
+const updateCoordinatorProfileSchema = z.object({
   body: z.object({
     agencyName: z.preprocess(emptyToUndefined, z.string().optional()),
     address: z.string().min(5, "Agency location address is required"),
@@ -19,7 +19,7 @@ const updateAgentProfileSchema = z.object({
   })
 });
 
-const updateAgentSchema = z.object({
+const updateCoordinatorSchema = z.object({
   body: z.object({
     agencyName: z.preprocess(emptyToUndefined, z.string().optional()),
     address: z.preprocess(emptyToUndefined, z.string().min(5).optional()),
@@ -30,9 +30,9 @@ const updateAgentSchema = z.object({
   })
 });
 
-const createAgentSchema = z.object({
+const createCoordinatorSchema = z.object({
   body: z.object({
-    name: z.string().min(2, "Agent name is required"),
+    name: z.string().min(2, "Coordinator name is required"),
     email: z.string().email("Valid email is required"),
     phone: z.preprocess(emptyToUndefined, z.string().optional()),
     password: z.preprocess(emptyToUndefined, z.string().min(6).optional()),
@@ -50,7 +50,7 @@ const createAgentSchema = z.object({
 });
 
 module.exports = {
-  updateAgentProfileSchema,
-  updateAgentSchema,
-  createAgentSchema
+  updateCoordinatorProfileSchema,
+  updateCoordinatorSchema,
+  createCoordinatorSchema
 };

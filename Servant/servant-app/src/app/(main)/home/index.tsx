@@ -48,7 +48,7 @@ type Booking = {
   monthlyStartDate?: string | null;
   totalAmount?: number | null;
   updatedAt?: string;
-  houseOwner: { user: { name: string } };
+  parent: { user: { name: string } };
   pendingWorkOtp?: boolean;
   workOtpExpiresAt?: string | null;
 };
@@ -95,10 +95,10 @@ export default function ServantHomeScreen() {
   });
 
   const { data: profile } = useQuery({
-    queryKey: ['servant-profile'],
+    queryKey: ['caregiver-profile'],
     queryFn: async () => {
-      const res = await api.get('/servants/me');
-      return res.data.data.servant as {
+      const res = await api.get('/caregivers/me');
+      return res.data.data.caregiver as {
         hourlyRate?: number | null;
         verificationStatus?: string;
       };
@@ -108,7 +108,7 @@ export default function ServantHomeScreen() {
 
   const isVerified =
     profile?.verificationStatus === 'VERIFIED' ||
-    user?.servant?.verificationStatus === 'VERIFIED';
+    user?.caregiver?.verificationStatus === 'VERIFIED';
 
   const { data: openRequests } = useQuery({
     queryKey: ['open-requests'],
@@ -383,7 +383,7 @@ export default function ServantHomeScreen() {
               <View style={styles.liveMap}>
                 <JobTrackingMap
                   home={home}
-                  homeLabel={activeJob?.houseOwner.user.name || t('schedule.customer')}
+                  homeLabel={activeJob?.parent.user.name || t('schedule.customer')}
                   showMyLocation
                   showMapInitially
                   height={220}
@@ -420,7 +420,7 @@ export default function ServantHomeScreen() {
             <GlassCard key={`open-${b.id}`} style={styles.mb}>
               <Pressable onPress={() => openJobDetail(b.id)} style={styles.jobHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{b.houseOwner.user.name}</Text>
+                  <Text style={styles.cardTitle}>{b.parent.user.name}</Text>
                   <Text style={styles.cardMeta}>
                     {localizedSkillLabel(b.requestedSkill || '', []) || t('servantHome.generalHelp')}
                     {' · '}
@@ -469,7 +469,7 @@ export default function ServantHomeScreen() {
             <GlassCard key={b.id} style={styles.mb}>
               <Pressable onPress={() => openJobDetail(b.id)} style={styles.jobHeader}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle}>{b.houseOwner.user.name}</Text>
+                  <Text style={styles.cardTitle}>{b.parent.user.name}</Text>
                   <Text style={styles.cardMeta}>{b.bookingType}</Text>
                   {b.address ? <Text style={styles.addr}>{b.address}</Text> : null}
                 </View>
@@ -508,7 +508,7 @@ export default function ServantHomeScreen() {
         </>
       )}
 
-      <Text style={styles.section}>{t('servantHome.todayJobsSection')}</Text>
+      <Text style={styles.section}>{t('caregiverHome.todaySchedule')}</Text>
       {bookingsLoading && !bookings ? (
         <GlassCard>
           <Text style={styles.empty}>{t('common.loading')}</Text>
@@ -533,7 +533,7 @@ export default function ServantHomeScreen() {
                 <View style={styles.jobRow}>
                   <MaterialIcons name="location-on" size={18} color={Stitch.colors.secondary} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.cardTitle}>{b.houseOwner.user.name}</Text>
+                    <Text style={styles.cardTitle}>{b.parent.user.name}</Text>
                     <Text style={styles.cardMeta}>
                       {formatVisitAddressLines(b).join(' · ') || b.address || t('servantHome.addressOnFile')}
                     </Text>
@@ -549,7 +549,7 @@ export default function ServantHomeScreen() {
               {b.latitude != null && b.longitude != null ? (
                 <JobTrackingMap
                   home={{ latitude: b.latitude, longitude: b.longitude }}
-                  homeLabel={b.houseOwner.user.name}
+                  homeLabel={b.parent.user.name}
                   showMyLocation={!activeEntry}
                   showMapInitially={onWayBookingId === b.id}
                   height={160}

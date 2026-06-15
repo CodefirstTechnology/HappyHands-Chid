@@ -32,7 +32,7 @@ import { WorkStartOtpCard } from '@/components/bookings/WorkStartOtpCard';
 type BookingWithOtp = BookingSummary & {
   pendingWorkOtp?: boolean;
   workStartOtp?: { code: string; expiresAt: string };
-  servant?: { user?: { name?: string } };
+  caregiver?: { user?: { name?: string } };
 };
 
 const SKILL_ICONS: Record<string, keyof typeof MaterialIcons.glyphMap> = {
@@ -62,24 +62,24 @@ export default function HomeScreen() {
     ) {
       return liveLocation;
     }
-    const ho = user?.houseOwner;
+    const ho = user?.parent;
     if (ho?.latitude != null && ho?.longitude != null) {
       return { latitude: ho.latitude, longitude: ho.longitude };
     }
     return null;
-  }, [liveLocation, user?.houseOwner]);
+  }, [liveLocation, user?.parent]);
 
   const { data: nearbyHelpers = [], isLoading: helpersLoading, refetch: refetchHelpers } = useQuery({
-    queryKey: ['servants', 'home', searchLocation?.latitude, searchLocation?.longitude],
+    queryKey: ['caregivers', 'home', searchLocation?.latitude, searchLocation?.longitude],
     enabled: !locLoading && !!searchLocation,
     queryFn: async () => {
-      const res = await api.get('/servants', {
+      const res = await api.get('/caregivers', {
         params: {
           latitude: searchLocation!.latitude,
           longitude: searchLocation!.longitude,
         },
       });
-      return res.data.data.servants as unknown[];
+      return res.data.data.caregivers as unknown[];
     },
   });
 
@@ -109,7 +109,7 @@ export default function HomeScreen() {
   const hasBookings = homeActive.length > 0 || homeRecent.length > 0;
 
   const headerLocation = (() => {
-    const ho = user?.houseOwner;
+    const ho = user?.parent;
     const detailLines = ho
       ? formatVisitAddressLines({
           flatNo: ho.flatNo,
@@ -225,7 +225,7 @@ export default function HomeScreen() {
         {otpBooking?.workStartOtp?.code ? (
           <WorkStartOtpCard
             code={otpBooking.workStartOtp.code}
-            helperName={otpBooking.servant?.user?.name}
+            helperName={otpBooking.caregiver?.user?.name}
           />
         ) : null}
 

@@ -6,31 +6,31 @@ const { authenticate, requireRole } = require("../middleware/auth");
 router.post(
   "/clock-in",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   timeController.clockIn
 );
 router.post(
   "/clock-out",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   timeController.clockOut
 );
 router.get(
   "/today",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   timeController.getToday
 );
 router.get(
   "/month",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   timeController.getMonth
 );
 router.get(
   "/history",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   timeController.getHistory
 );
 

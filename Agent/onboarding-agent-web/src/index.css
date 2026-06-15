@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #15157d;
-  --color-primary-container: #2e3192;
-  --color-primary-fixed: #e1e0ff;
-  --color-secondary: #7d44a4;
-  --color-secondary-container: #d697fe;
+  --color-primary: #1b6ca8;
+  --color-primary-container: #155a8c;
+  --color-primary-fixed: #e1f0fa;
+  --color-secondary: #2ca58d;
+  --color-secondary-container: #249178;
   --color-tertiary: #491a00;
   --color-tertiary-accent: #f19160;
   --color-background: #fcf8ff;
@@ -16,8 +16,8 @@
   --color-on-surface-variant: #464652;
   --color-outline-variant: #c7c5d4;
   --color-error: #ba1a1a;
-  --gradient-start: #ed1e79;
-  --gradient-end: #662d8c;
+  --gradient-start: #1b6ca8;
+  --gradient-end: #2ca58d;
   --font-sans: "Inter", system-ui, sans-serif;
   --radius-xl: 1.5rem;
   --shadow-card: 0 4px 30px rgba(46, 49, 146, 0.08);
@@ -44,7 +44,7 @@ body {
   color: white;
   font-weight: 600;
   border-radius: 0.75rem;
-  box-shadow: 0 8px 20px rgba(237, 30, 121, 0.25);
+  box-shadow: 0 8px 20px rgba(44, 165, 141, 0.25);
   transition: transform 0.15s;
 }
 .btn-gradient:hover {

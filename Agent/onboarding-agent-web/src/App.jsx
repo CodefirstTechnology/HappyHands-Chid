@@ -30,17 +30,17 @@ export default function App() {
             <Route
               path="/"
               element={
-                <ProtectedRoute roles={['AGENT', 'ADMIN']}>
+                <ProtectedRoute roles={['COORDINATOR', 'ADMIN']}>
                   <DashboardLayout />
                 </ProtectedRoute>
               }
             >
               <Route index element={<Dashboard />} />
               <Route path="registrations" element={<AppRegistrationList />} />
-              <Route path="servants" element={<ServantList />} />
-              <Route path="servants/new" element={<OnboardServant />} />
-              <Route path="servants/:id" element={<ServantDetail />} />
-              <Route path="servants/:id/edit" element={<EditServant />} />
+              <Route path="caregivers" element={<ServantList />} />
+              <Route path="caregivers/new" element={<OnboardServant />} />
+              <Route path="caregivers/:id" element={<ServantDetail />} />
+              <Route path="caregivers/:id/edit" element={<EditServant />} />
               <Route path="profile" element={<AgentProfile />} />
             </Route>
             <Route
@@ -55,7 +55,7 @@ export default function App() {
               <Route path="agents" element={<AdminAgents />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="bookings" element={<AdminBookings />} />
-              <Route path="servants" element={<AdminServants />} />
+              <Route path="caregivers" element={<AdminServants />} />
               <Route path="skills" element={<AdminSkills />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

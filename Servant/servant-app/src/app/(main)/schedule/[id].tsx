@@ -162,7 +162,7 @@ export default function ScheduleDetailScreen() {
       </View>
 
       <GlassCard>
-        <Text style={styles.title}>{booking.houseOwner.user.name}</Text>
+        <Text style={styles.title}>{booking.parent.user.name}</Text>
         <StatusPill status={booking.status} />
         <Text style={styles.meta}>{visitType}</Text>
         {skill ? <Text style={styles.detailRow}>{t('servantHome.skillLabel', { skill })}</Text> : null}
@@ -209,7 +209,7 @@ export default function ScheduleDetailScreen() {
         <>
           <JobTrackingMap
             home={home}
-            homeLabel={booking.houseOwner.user.name}
+            homeLabel={booking.parent.user.name}
             showMyLocation
             showMapInitially={trackEnabled}
             height={220}

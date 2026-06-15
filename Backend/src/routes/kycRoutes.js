@@ -7,7 +7,7 @@ const { uploadAadhaarZip } = require("../middleware/uploadKyc");
 router.post(
   "/aadhaar/xml/verify",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   uploadAadhaarZip.single("aadhaarZip"),
   kycController.verifyAadhaarXmlForMe
 );
@@ -15,22 +15,22 @@ router.post(
 router.get(
   "/aadhaar/status",
   authenticate,
-  requireRole("SERVANT"),
+  requireRole("CAREGIVER"),
   kycController.getMyAadhaarStatus
 );
 
 router.post(
   "/aadhaar/xml/verify/:id",
   authenticate,
-  requireRole("AGENT", "ADMIN"),
+  requireRole("COORDINATOR", "ADMIN"),
   uploadAadhaarZip.single("aadhaarZip"),
-  kycController.verifyAadhaarXmlForServant
+  kycController.verifyAadhaarXmlForCaregiver
 );
 
 router.get(
   "/aadhaar/status/:id",
   authenticate,
-  requireRole("AGENT", "ADMIN", "SERVANT"),
+  requireRole("COORDINATOR", "ADMIN", "CAREGIVER"),
   kycController.getAadhaarStatus
 );
 

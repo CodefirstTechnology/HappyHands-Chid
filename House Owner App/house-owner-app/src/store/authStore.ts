@@ -10,7 +10,7 @@ type User = {
   email: string;
   role: string;
   preferredLanguage?: string;
-  houseOwner?: {
+  parent?: {
     id: number;
     city?: string;
     address?: string;
@@ -19,6 +19,9 @@ type User = {
     area?: string;
     latitude?: number;
     longitude?: number;
+    numberOfChildren?: number;
+    childrenAges?: number[];
+    specialRequirements?: string;
   };
 };
 
@@ -62,7 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       email: email.trim().toLowerCase(),
       password,
     });
-    if (data.data.user.role !== 'HOUSE_OWNER') {
+    if (data.data.user.role !== 'PARENT') {
       throw {
         response: {
           data: {
@@ -82,7 +85,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (payload) => {
     const body = payload as Record<string, string | number | undefined>;
     const lang = useLanguageStore.getState().language;
-    const { data } = await api.post('/auth/register-owner', {
+    const { data } = await api.post('/auth/register-parent', {
       ...body,
       email: String(body.email).trim().toLowerCase(),
       preferredLanguage: lang,

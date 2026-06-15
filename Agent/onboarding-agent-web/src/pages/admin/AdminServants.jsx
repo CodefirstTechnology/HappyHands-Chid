@@ -32,10 +32,10 @@ export default function AdminServants() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-servants', status],
     queryFn: async () => {
-      const res = await api.get('/admin/servants', {
+      const res = await api.get('/admin/caregivers', {
         params: { status: status || undefined },
       })
-      return res.data.data.servants
+      return res.data.data.caregivers
     },
   })
 
@@ -61,7 +61,7 @@ export default function AdminServants() {
         title="Servants"
         description="Every helper on the platform — agent-onboarded and app registrations."
         action={
-          <Link to="/servants/new">
+          <Link to="/caregivers/new">
             <Button variant="gradient">+ Onboard servant</Button>
           </Link>
         }
@@ -106,7 +106,7 @@ export default function AdminServants() {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
                         <Link
-                          to={`/servants/${s.id}`}
+                          to={`/caregivers/${s.id}`}
                           className="font-semibold text-primary hover:text-secondary"
                         >
                           {s.user?.name}
@@ -131,7 +131,7 @@ export default function AdminServants() {
                   )}
                 </div>
                 <Link
-                  to={`/servants/${s.id}`}
+                  to={`/caregivers/${s.id}`}
                   className="mt-4 block w-full rounded-xl bg-primary/10 py-2 text-center text-sm font-semibold text-primary hover:bg-primary/15"
                 >
                   View profile
@@ -149,7 +149,7 @@ export default function AdminServants() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Link
-                          to={`/servants/${s.id}`}
+                          to={`/caregivers/${s.id}`}
                           className="font-semibold text-primary hover:text-secondary"
                         >
                           {s.user?.name}
@@ -185,7 +185,7 @@ export default function AdminServants() {
                 </td>
                 <td className="px-4 py-4">
                   <Link
-                    to={`/servants/${s.id}`}
+                    to={`/caregivers/${s.id}`}
                     className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
                   >
                     View

@@ -17,30 +17,30 @@ const formatRupee = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`
 
 export default function Dashboard() {
   const { data: revenue, isLoading: loadingRevenue } = useQuery({
-    queryKey: ['agent-stats'],
+    queryKey: ['coordinator-stats'],
     queryFn: async () => {
-      const res = await api.get('/agent/stats')
+      const res = await api.get('/coordinator/stats')
       return res.data.data
     },
   })
 
   const { data: servants = [], isLoading: loadingServants } = useQuery({
-    queryKey: ['agent-servants'],
+    queryKey: ['coordinator-servants'],
     queryFn: async () => {
-      const res = await api.get('/agent/servants', {
+      const res = await api.get('/coordinator/caregivers', {
         params: { category: 'onboarded', limit: 100 },
       })
-      return res.data.data.servants
+      return res.data.data.caregivers
     },
   })
 
   const { data: registrations = [], isLoading: loadingRegistrations } = useQuery({
-    queryKey: ['agent-registrations'],
+    queryKey: ['coordinator-registrations'],
     queryFn: async () => {
-      const res = await api.get('/agent/servants', {
+      const res = await api.get('/coordinator/caregivers', {
         params: { category: 'registered', limit: 100 },
       })
-      return res.data.data.servants
+      return res.data.data.caregivers
     },
   })
 
@@ -67,7 +67,7 @@ export default function Dashboard() {
       value: loadingRevenue ? '…' : (revenue?.annualCompletedBookings ?? 0),
       accent: 'text-emerald-600',
     },
-    { label: 'My servants', value: servants.length, accent: 'text-primary' },
+    { label: 'My caregivers', value: servants.length, accent: 'text-primary' },
     {
       label: 'Verified helpers',
       value: loadingRevenue ? '…' : (revenue?.verifiedServants ?? verified.length),
@@ -150,15 +150,15 @@ export default function Dashboard() {
                   Loading…
                 </td>
               </tr>
-            ) : (revenue?.servantRevenue || []).length === 0 ? (
+            ) : (revenue?.caregiverRevenue || []).length === 0 ? (
               <tr>
                 <td colSpan={3} className="p-8 text-center text-on-surface-variant">
                   No completed jobs from your helpers yet this year.
                 </td>
               </tr>
             ) : (
-              revenue.servantRevenue.map((row) => (
-                <tr key={row.servantId} className="border-t border-outline-variant/30">
+              revenue.caregiverRevenue.map((row) => (
+                <tr key={row.caregiverId} className="border-t border-outline-variant/30">
                   <td className="p-4 font-medium">{row.name}</td>
                   <td className="p-4">{row.completedBookings}</td>
                   <td className="p-4 font-semibold text-amber-700">
@@ -216,7 +216,7 @@ export default function Dashboard() {
                   </td>
                   <td className="p-4">{s.user.email}</td>
                   <td className="p-4">
-                    {s.user.agentSetPassword ? (
+                    {s.user.coordinatorSetPassword ? (
                       <span className="font-medium text-emerald-700">Set</span>
                     ) : (
                       <span className="text-amber-700">Not set</span>
@@ -225,7 +225,7 @@ export default function Dashboard() {
                   <td className="p-4">{s.verificationStatus}</td>
                   <td className="p-4">
                     <Link
-                      to={`/servants/${s.id}?from=registrations`}
+                      to={`/caregivers/${s.id}?from=registrations`}
                       className="font-semibold text-violet-700 hover:underline"
                     >
                       Set password & review →
@@ -239,9 +239,9 @@ export default function Dashboard() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h3 className="text-lg font-semibold text-primary">My servants — pending verification</h3>
-        <Link to="/servants/new" className="btn-gradient px-6 py-2.5 text-sm">
-          Onboard new servant
+        <h3 className="text-lg font-semibold text-primary">My caregivers — pending verification</h3>
+        <Link to="/caregivers/new" className="btn-gradient px-6 py-2.5 text-sm">
+          Onboard new caregiver
         </Link>
       </div>
 
@@ -273,7 +273,7 @@ export default function Dashboard() {
                 <tr key={s.id} className="border-t border-outline-variant/30">
                   <td className="p-4">
                     <Link
-                      to={`/servants/${s.id}`}
+                      to={`/caregivers/${s.id}`}
                       className="font-medium text-primary hover:underline"
                     >
                       {s.user.name}
@@ -287,7 +287,7 @@ export default function Dashboard() {
                   </td>
                   <td className="p-4">
                     <Link
-                      to={`/servants/${s.id}`}
+                      to={`/caregivers/${s.id}`}
                       className="text-secondary font-semibold hover:underline"
                     >
                       Review →

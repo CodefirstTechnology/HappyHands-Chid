@@ -1,11 +1,11 @@
 const prisma = require("../config/prisma");
 const { ROLE_IDS } = require("./roleService");
 
-const DEFAULT_RADIUS_KM = Number(process.env.SERVANT_AGENT_RADIUS_KM) || 3;
+const DEFAULT_RADIUS_KM = Number(process.env.CAREGIVER_COORDINATOR_RADIUS_KM) || 3;
 const KM_PER_DEGREE_LAT = 111;
 
-const getAgentRadiusKm = (agent) => {
-  const radius = agent?.serviceRadiusKm;
+const getCoordinatorRadiusKm = (coordinator) => {
+  const radius = coordinator?.serviceRadiusKm;
   if (radius != null && !Number.isNaN(Number(radius)) && Number(radius) > 0) {
     return Number(radius);
   }
@@ -29,26 +29,26 @@ const isNearPoint = (lat, lng, pointLat, pointLng, radiusKm = DEFAULT_RADIUS_KM)
   return haversineKm(lat, lng, pointLat, pointLng) <= radiusKm;
 };
 
-const servantCoversLocation = (servant, latitude, longitude, radiusKm = DEFAULT_RADIUS_KM) => {
-  const zones = servant.zones || [];
+const caregiverCoversLocation = (caregiver, latitude, longitude, radiusKm = DEFAULT_RADIUS_KM) => {
+  const zones = caregiver.zones || [];
   if (!zones.length) return false;
   return zones.some((zone) =>
     isNearPoint(latitude, longitude, zone.latitude, zone.longitude, radiusKm)
   );
 };
 
-const bookingMatchesServantSkill = (booking, servant) => {
+const bookingMatchesCaregiverSkill = (booking, caregiver) => {
   if (!booking.requestedSkill) return true;
   const wanted = String(booking.requestedSkill).toUpperCase();
-  return (servant.skills || []).some((s) => String(s.skillName).toUpperCase() === wanted);
+  return (caregiver.skills || []).some((s) => String(s.skillName).toUpperCase() === wanted);
 };
 
-const findServantsNearLocation = async (
+const findCaregiversNearLocation = async (
   latitude,
   longitude,
   { skill, radiusKm = DEFAULT_RADIUS_KM } = {}
 ) => {
-  const servants = await prisma.servant.findMany({
+  const caregivers = await prisma.caregiver.findMany({
     where: {
       verificationStatus: "VERIFIED",
       user: { isActive: true },
@@ -63,24 +63,26 @@ const findServantsNearLocation = async (
     }
   });
 
-  return servants.filter((servant) => servantCoversLocation(servant, latitude, longitude, radiusKm));
+  return caregivers.filter((caregiver) =>
+    caregiverCoversLocation(caregiver, latitude, longitude, radiusKm)
+  );
 };
 
-const agentHasLocation = (agent) =>
-  agent?.latitude != null &&
-  agent?.longitude != null &&
-  !Number.isNaN(agent.latitude) &&
-  !Number.isNaN(agent.longitude);
+const coordinatorHasLocation = (coordinator) =>
+  coordinator?.latitude != null &&
+  coordinator?.longitude != null &&
+  !Number.isNaN(coordinator.latitude) &&
+  !Number.isNaN(coordinator.longitude);
 
-const isServantNearAgent = (servant, agent, radiusKm) => {
-  if (!agentHasLocation(agent)) return false;
-  if (servant?.latitude == null || servant?.longitude == null) return false;
-  const km = radiusKm ?? getAgentRadiusKm(agent);
+const isCaregiverNearCoordinator = (caregiver, coordinator, radiusKm) => {
+  if (!coordinatorHasLocation(coordinator)) return false;
+  if (caregiver?.latitude == null || caregiver?.longitude == null) return false;
+  const km = radiusKm ?? getCoordinatorRadiusKm(coordinator);
   return isNearPoint(
-    servant.latitude,
-    servant.longitude,
-    agent.latitude,
-    agent.longitude,
+    caregiver.latitude,
+    caregiver.longitude,
+    coordinator.latitude,
+    coordinator.longitude,
     km
   );
 };
@@ -95,39 +97,39 @@ const boundingBoxForRadius = (latitude, longitude, radiusKm = DEFAULT_RADIUS_KM)
   };
 };
 
-const filterServantsNearAgent = (servants, agent, radiusKm) => {
-  const km = radiusKm ?? getAgentRadiusKm(agent);
-  return servants.filter((servant) => isServantNearAgent(servant, agent, km));
+const filterCaregiversNearCoordinator = (caregivers, coordinator, radiusKm) => {
+  const km = radiusKm ?? getCoordinatorRadiusKm(coordinator);
+  return caregivers.filter((caregiver) => isCaregiverNearCoordinator(caregiver, coordinator, km));
 };
 
-const findAgentsNearLocation = async (
+const findCoordinatorsNearLocation = async (
   latitude,
   longitude,
   { activeOnly = true } = {}
 ) => {
   if (latitude == null || longitude == null) return [];
 
-  const agents = await prisma.agent.findMany({
+  const coordinators = await prisma.coordinator.findMany({
     where: {
       latitude: { not: null },
       longitude: { not: null },
       ...(activeOnly
-        ? { user: { isActive: true, roleId: ROLE_IDS.AGENT } }
-        : { user: { roleId: ROLE_IDS.AGENT } })
+        ? { user: { isActive: true, roleId: ROLE_IDS.COORDINATOR } }
+        : { user: { roleId: ROLE_IDS.COORDINATOR } })
     },
     include: {
       user: { select: { id: true, name: true, email: true, isActive: true } }
     }
   });
 
-  return agents
-    .filter((agent) =>
+  return coordinators
+    .filter((coordinator) =>
       isNearPoint(
         latitude,
         longitude,
-        agent.latitude,
-        agent.longitude,
-        getAgentRadiusKm(agent)
+        coordinator.latitude,
+        coordinator.longitude,
+        getCoordinatorRadiusKm(coordinator)
       )
     )
     .sort(
@@ -139,15 +141,15 @@ const findAgentsNearLocation = async (
 
 module.exports = {
   DEFAULT_RADIUS_KM,
-  getAgentRadiusKm,
+  getCoordinatorRadiusKm,
   haversineKm,
   isNearPoint,
-  agentHasLocation,
-  isServantNearAgent,
+  coordinatorHasLocation,
+  isCaregiverNearCoordinator,
   boundingBoxForRadius,
-  filterServantsNearAgent,
-  servantCoversLocation,
-  bookingMatchesServantSkill,
-  findServantsNearLocation,
-  findAgentsNearLocation
+  filterCaregiversNearCoordinator,
+  caregiverCoversLocation,
+  bookingMatchesCaregiverSkill,
+  findCaregiversNearLocation,
+  findCoordinatorsNearLocation
 };

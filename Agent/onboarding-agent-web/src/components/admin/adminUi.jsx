@@ -65,9 +65,9 @@ export function ActivePill({ active }) {
 }
 
 const roleColors = {
-  HOUSE_OWNER: 'bg-blue-100 text-blue-800',
-  SERVANT: 'bg-violet-100 text-violet-800',
-  AGENT: 'bg-secondary/15 text-secondary',
+  PARENT: 'bg-blue-100 text-blue-800',
+  CAREGIVER: 'bg-violet-100 text-violet-800',
+  COORDINATOR: 'bg-secondary/15 text-secondary',
   ADMIN: 'bg-primary/10 text-primary',
 }
 

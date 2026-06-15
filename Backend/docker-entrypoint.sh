@@ -4,5 +4,5 @@ set -e
 echo "Running database migrations..."
 npx prisma migrate deploy
 
-echo "Starting StaffEra API..."
+echo "Starting ChildCare API..."
 exec node src/server.js

@@ -7,7 +7,7 @@ export type BookingTracking = {
     latitude?: number | null;
     longitude?: number | null;
   };
-  servant: {
+  caregiver: {
     latitude: number;
     longitude: number;
     updatedAt: string;

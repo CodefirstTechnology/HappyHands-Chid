@@ -100,23 +100,23 @@ export default function ServantDetail() {
   const [ifscMeta, setIfscMeta] = useState({ bank: '', branch: '' })
 
   const { data: servant, isLoading } = useQuery({
-    queryKey: ['servant', id],
+    queryKey: ['caregiver', id],
     queryFn: async () => {
-      const res = await api.get(`/agent/servants/${id}`)
-      return res.data.data.servant
+      const res = await api.get(`/coordinator/caregivers/${id}`)
+      return res.data.data.caregiver
     },
   })
 
   const verify = async (status, rejectionReason, opts = {}) => {
-    const res = await api.patch(`/agent/servants/${id}/verify`, {
+    const res = await api.patch(`/coordinator/caregivers/${id}/verify`, {
       status,
       reason: rejectionReason,
       ...(opts.password ? { password: opts.password } : {}),
       ...(opts.generatePassword ? { generatePassword: true } : {}),
     })
-    qc.invalidateQueries({ queryKey: ['servant', id] })
-    qc.invalidateQueries({ queryKey: ['agent-servants'] })
-    qc.invalidateQueries({ queryKey: ['agent-registrations'] })
+    qc.invalidateQueries({ queryKey: ['caregiver', id] })
+    qc.invalidateQueries({ queryKey: ['coordinator-servants'] })
+    qc.invalidateQueries({ queryKey: ['coordinator-registrations'] })
     setRejectOpen(false)
     setApproveOpen(false)
     if (res.data?.data?.credentials) {
@@ -146,11 +146,11 @@ export default function ServantDetail() {
     servant?.registrationSource === 'SELF' || servant?.user?.isActive === false
 
   const handleApproveClick = () => {
-    if (isAppRegistration && !servant?.user?.agentSetPassword) {
+    if (isAppRegistration && !servant?.user?.coordinatorSetPassword) {
       setApproveOpen(true)
       return
     }
-    if (isAppRegistration && servant?.user?.agentSetPassword) {
+    if (isAppRegistration && servant?.user?.coordinatorSetPassword) {
       if (window.confirm('Approve this helper? They can sign in with the password you already set.')) {
         verify('VERIFIED')
       }
@@ -178,7 +178,7 @@ export default function ServantDetail() {
     return (
       <div className="mx-auto max-w-lg text-center">
         <p className="text-lg font-semibold text-primary">Servant not found</p>
-        <Link to="/servants" className="mt-4 inline-block text-sm text-secondary hover:underline">
+        <Link to="/caregivers" className="mt-4 inline-block text-sm text-secondary hover:underline">
           ← Back to servants
         </Link>
       </div>
@@ -195,13 +195,13 @@ export default function ServantDetail() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
-          to={fromRegistrations ? '/registrations' : '/servants'}
+          to={fromRegistrations ? '/registrations' : '/caregivers'}
           className="inline-flex items-center gap-2 text-sm font-medium text-on-surface-variant transition-colors hover:text-primary"
         >
           <span aria-hidden>←</span>{' '}
           {fromRegistrations ? 'Back to app registrations' : 'Back to servants'}
         </Link>
-        <Link to={`/servants/${id}/edit`}>
+        <Link to={`/caregivers/${id}/edit`}>
           <Button variant="secondary">Edit profile</Button>
         </Link>
       </div>
@@ -346,7 +346,7 @@ export default function ServantDetail() {
               ) : (
                 <p className="text-sm text-on-surface-variant">
                   No zones yet.{' '}
-                  <Link to={`/servants/${id}/edit`} className="text-primary underline">
+                  <Link to={`/caregivers/${id}/edit`} className="text-primary underline">
                     Add service zones
                   </Link>
                 </p>
@@ -403,7 +403,7 @@ export default function ServantDetail() {
           </SectionCard>
 
           <SectionCard title="Aadhaar verification">
-            <AadhaarXmlVerify servantId={id} servant={servant} compact />
+            <AadhaarXmlVerify caregiverId={id} servant={servant} compact />
           </SectionCard>
 
           <SectionCard title="Bank details">
@@ -466,7 +466,7 @@ export default function ServantDetail() {
                           })}
                         </td>
                         <td className="px-4 py-3">
-                          {b.houseOwner?.user?.name || '—'}
+                          {b.parent?.user?.name || '—'}
                         </td>
                         <td className="px-4 py-3 capitalize text-on-surface-variant">
                           {b.bookingType?.toLowerCase()}
@@ -487,10 +487,10 @@ export default function ServantDetail() {
         <div className="space-y-6">
           {isAppRegistration ? (
             <SetLoginPasswordCard
-              servantId={id}
+              caregiverId={id}
               email={servant.user.email}
-              passwordAlreadySet={!!servant.user.agentSetPassword}
-              onSaved={() => qc.invalidateQueries({ queryKey: ['servant', id] })}
+              passwordAlreadySet={!!servant.user.coordinatorSetPassword}
+              onSaved={() => qc.invalidateQueries({ queryKey: ['caregiver', id] })}
             />
           ) : null}
 

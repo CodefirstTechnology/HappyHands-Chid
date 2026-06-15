@@ -32,6 +32,11 @@ export default function BrowseScreen() {
   const [skill, setSkill] = useState('');
   const [city, setCity] = useState('');
   const [zone, setZone] = useState('');
+  const [ageRange, setAgeRange] = useState('');
+  const [maxChildren, setMaxChildren] = useState('');
+  const [cprCert, setCprCert] = useState(false);
+  const [firstAidCert, setFirstAidCert] = useState(false);
+  const ageRangeOptions = ['0-2', '3-5', '6-12', '13+'];
   const skillCodes = skills.map((s) => s.code);
 
   const searchLocation = useMemo<LocationValue | null>(() => {
@@ -43,7 +48,7 @@ export default function BrowseScreen() {
     ) {
       return liveLocation;
     }
-    const ho = user?.houseOwner;
+    const ho = user?.parent;
     if (
       ho?.latitude != null &&
       ho?.longitude != null &&
@@ -58,7 +63,7 @@ export default function BrowseScreen() {
       };
     }
     return null;
-  }, [liveLocation, user?.houseOwner]);
+  }, [liveLocation, user?.parent]);
 
   useEffect(() => {
     const raw = Array.isArray(skillParam) ? skillParam[0] : skillParam;
@@ -69,18 +74,22 @@ export default function BrowseScreen() {
   }, [skillParam, skillCodes.join(',')]);
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['servants', skill, city, zone, searchLocation?.latitude, searchLocation?.longitude],
+    queryKey: ['caregivers', skill, city, zone, ageRange, maxChildren, cprCert, firstAidCert, searchLocation?.latitude, searchLocation?.longitude],
     enabled: !locLoading && !!searchLocation,
     queryFn: async () => {
-      const params: Record<string, string | number> = {
+      const params: Record<string, string | number | boolean> = {
         skill: skill || undefined,
         city: city || undefined,
         zone: zone || undefined,
+        ageRange: ageRange || undefined,
+        maxChildren: maxChildren ? Number(maxChildren) : undefined,
+        hasCprCert: cprCert ? 'true' : undefined,
+        hasFirstAidCert: firstAidCert ? 'true' : undefined,
         latitude: searchLocation!.latitude,
         longitude: searchLocation!.longitude,
-      } as Record<string, string | number>;
-      const res = await api.get('/servants', { params });
-      return res.data.data.servants;
+      } as Record<string, string | number | boolean>;
+      const res = await api.get('/caregivers', { params });
+      return res.data.data.caregivers;
     },
   });
 
@@ -195,6 +204,42 @@ export default function BrowseScreen() {
           value={zone}
           onChangeText={setZone}
         />
+      </View>
+      <View style={styles.chipsSection}>
+        <Text style={styles.chipsLabel}>{t('browse.ageRange')}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow} contentContainerStyle={styles.chipsContent}>
+          {ageRangeOptions.map((range) => {
+            const selected = ageRange === range;
+            return (
+              <TouchableOpacity
+                key={range}
+                style={[styles.chip, selected && styles.chipOn]}
+                onPress={() => setAgeRange(ageRange === range ? '' : range)}
+              >
+                <Text style={[styles.chipText, selected && styles.chipTextOn]}>{range}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+      <View style={styles.searchWrap}>
+        <MaterialIcons name="child-care" size={20} color={Stitch.colors.onSurfaceVariant} />
+        <TextInput
+          style={styles.search}
+          placeholder={t('browse.maxChildrenPlaceholder')}
+          placeholderTextColor={Stitch.colors.onSurfaceVariant + '99'}
+          value={maxChildren}
+          onChangeText={setMaxChildren}
+          keyboardType="number-pad"
+        />
+      </View>
+      <View style={styles.certRow}>
+        <TouchableOpacity style={[styles.certChip, cprCert && styles.certChipOn]} onPress={() => setCprCert(!cprCert)}>
+          <Text style={[styles.certText, cprCert && styles.certTextOn]}>{t('browse.cprCertified')}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.certChip, firstAidCert && styles.certChipOn]} onPress={() => setFirstAidCert(!firstAidCert)}>
+          <Text style={[styles.certText, firstAidCert && styles.certTextOn]}>{t('browse.firstAidCertified')}</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.chipsSection}>
         <Text style={styles.chipsLabel}>{t('browse.category')}</Text>
@@ -424,4 +469,20 @@ const styles = StyleSheet.create({
     color: Stitch.colors.onSurfaceVariant,
   },
   countBtn: { marginTop: 16 },
+  certRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginHorizontal: Stitch.spacing.padding,
+    marginBottom: 12,
+  },
+  certChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: Stitch.radius.pill,
+    backgroundColor: Stitch.colors.surfaceContainer,
+  },
+  certChipOn: { backgroundColor: Stitch.colors.primaryFixed },
+  certText: { fontSize: 13, fontWeight: '600', color: Stitch.colors.onSurfaceVariant },
+  certTextOn: { color: Stitch.colors.primary },
 });

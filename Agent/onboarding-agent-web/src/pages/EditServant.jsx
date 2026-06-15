@@ -63,10 +63,10 @@ export default function EditServant() {
   const [bankAccountConfirm, setBankAccountConfirm] = useState('')
 
   const { data: servant, isLoading } = useQuery({
-    queryKey: ['servant', id],
+    queryKey: ['caregiver', id],
     queryFn: async () => {
-      const res = await api.get(`/agent/servants/${id}`)
-      return res.data.data.servant
+      const res = await api.get(`/coordinator/caregivers/${id}`)
+      return res.data.data.caregiver
     },
   })
 
@@ -156,7 +156,7 @@ export default function EditServant() {
     try {
       let newCredentials = null
       if (loginPassword.trim().length >= 6) {
-        const pwRes = await api.patch(`/agent/servants/${id}/password`, {
+        const pwRes = await api.patch(`/coordinator/caregivers/${id}/password`, {
           password: loginPassword.trim(),
         })
         newCredentials = pwRes.data?.data?.credentials || null
@@ -166,11 +166,11 @@ export default function EditServant() {
         }
       }
 
-      await api.patch(`/agent/servants/${id}`, fd, {
+      await api.patch(`/coordinator/caregivers/${id}`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       if (newCredentials) return
-      navigate(`/servants/${id}`)
+      navigate(`/caregivers/${id}`)
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to update servant')
     } finally {
@@ -376,7 +376,7 @@ export default function EditServant() {
         )}
       </div>
 
-      <AadhaarXmlVerify servantId={id} servant={servant} />
+      <AadhaarXmlVerify caregiverId={id} servant={servant} />
 
       <div className="space-y-4 rounded-xl bg-surface p-6 shadow-sm">
         <h3 className="font-semibold">Bank details</h3>
@@ -468,7 +468,7 @@ export default function EditServant() {
         )}
       </div>
 
-      <ServiceZonesEditor servantId={id} zones={servant.zones || []} />
+      <ServiceZonesEditor caregiverId={id} zones={servant.zones || []} />
 
       {savedCredentials && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm">
@@ -490,7 +490,7 @@ export default function EditServant() {
             >
               Copy all
             </Button>
-            <Button variant="success" onClick={() => navigate(`/servants/${id}`)}>
+            <Button variant="success" onClick={() => navigate(`/caregivers/${id}`)}>
               Done
             </Button>
           </div>
@@ -502,7 +502,7 @@ export default function EditServant() {
         <Button onClick={save} disabled={saving}>
           {saving ? 'Saving…' : 'Save'}
         </Button>
-        <Button variant="secondary" onClick={() => navigate(`/servants/${id}`)}>
+        <Button variant="secondary" onClick={() => navigate(`/caregivers/${id}`)}>
           Cancel
         </Button>
       </div>

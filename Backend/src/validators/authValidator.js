@@ -28,7 +28,23 @@ const parseSkillsBody = (val) => {
   return [];
 };
 
-const registerServantSchema = z.object({
+const parseChildrenAges = (val) => {
+  if (Array.isArray(val)) return val.map(Number).filter((n) => Number.isFinite(n));
+  if (typeof val === "string") {
+    try {
+      const parsed = JSON.parse(val);
+      if (Array.isArray(parsed)) return parsed.map(Number).filter((n) => Number.isFinite(n));
+    } catch {
+      return val
+        .split(",")
+        .map((s) => Number(s.trim()))
+        .filter((n) => Number.isFinite(n));
+    }
+  }
+  return [];
+};
+
+const registerCaregiverSchema = z.object({
   body: z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Invalid email address"),
@@ -48,7 +64,7 @@ const registerServantSchema = z.object({
   })
 });
 
-const registerOwnerSchema = z.object({
+const registerParentSchema = z.object({
   body: z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
     email: z.string().email("Invalid email address"),
@@ -58,7 +74,10 @@ const registerOwnerSchema = z.object({
     city: z.preprocess(emptyToUndefined, z.string().optional()),
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
-    preferredLanguage: z.enum(SUPPORTED_LANGUAGES).optional()
+    preferredLanguage: z.enum(SUPPORTED_LANGUAGES).optional(),
+    numberOfChildren: z.coerce.number().int().min(1).optional(),
+    childrenAges: z.preprocess(parseChildrenAges, z.array(z.number().int().min(0)).optional()),
+    specialRequirements: z.preprocess(emptyToUndefined, z.string().optional())
   })
 });
 
@@ -107,8 +126,8 @@ const updatePreferencesSchema = z.object({
 });
 
 module.exports = {
-  registerOwnerSchema,
-  registerServantSchema,
+  registerParentSchema,
+  registerCaregiverSchema,
   loginSchema,
   refreshSchema,
   forgotPasswordSchema,

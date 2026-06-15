@@ -14,8 +14,8 @@ enum VerificationStatus {
   REJECTED
 }
 
-enum ServantRegistrationSource {
-  AGENT
+enum CaregiverRegistrationSource {
+  COORDINATOR
   SELF
 }
 
@@ -48,25 +48,25 @@ model Role {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  name          String
-  email         String         @unique
-  phone         String?        @unique
-  password      String
-  roleId        Int            @default(4)
-  role          Role           @relation(fields: [roleId], references: [id])
-  isActive           Boolean        @default(true)
-  agentSetPassword   Boolean        @default(false)
-  fcmToken           String?
-  preferredLanguage  String         @default("en")
-  createdAt          DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                   Int            @id @default(autoincrement())
+  name                 String
+  email                String         @unique
+  phone                String?        @unique
+  password             String
+  roleId               Int            @default(4)
+  role                 Role           @relation(fields: [roleId], references: [id])
+  isActive             Boolean        @default(true)
+  coordinatorSetPassword Boolean      @default(false)
+  fcmToken             String?
+  preferredLanguage      String         @default("en")
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
-  houseOwner    HouseOwner?
-  servant       Servant?
-  agent         Agent?
-  refreshTokens RefreshToken[]
-  notifications Notification[]
+  parent         Parent?
+  caregiver      Caregiver?
+  coordinator    Coordinator?
+  refreshTokens  RefreshToken[]
+  notifications  Notification[]
 
   @@index([roleId])
 }
@@ -80,47 +80,50 @@ model RefreshToken {
   createdAt DateTime @default(now())
 }
 
-model HouseOwner {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @unique
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  address   String?
-  flatNo    String?
-  building  String?
-  area      String?
-  city      String?
-  latitude  Float?
-  longitude Float?
-  bookings  Booking[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+model Parent {
+  id                  Int       @id @default(autoincrement())
+  userId              Int       @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address             String?
+  flatNo              String?
+  building            String?
+  area                String?
+  city                String?
+  latitude            Float?
+  longitude           Float?
+  numberOfChildren    Int?
+  childrenAges        Int[]
+  specialRequirements String?
+  bookings            Booking[]
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
-model Servant {
-  id                 Int                @id @default(autoincrement())
-  userId             Int                @unique
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agentId            Int?
-  agent              Agent?             @relation(fields: [agentId], references: [id])
-  registrationSource ServantRegistrationSource @default(AGENT)
-  verificationStatus VerificationStatus @default(PENDING)
+model Caregiver {
+  id                 Int                       @id @default(autoincrement())
+  userId             Int                       @unique
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coordinatorId      Int?
+  coordinator        Coordinator?              @relation(fields: [coordinatorId], references: [id])
+  registrationSource CaregiverRegistrationSource @default(COORDINATOR)
+  verificationStatus VerificationStatus        @default(PENDING)
   verifiedAt         DateTime?
   rejectionReason    String?
   profilePhoto       String?
   idProofUrl         String?
   idProofType        String?
-  skills             ServantSkill[]
+  skills             CaregiverSkill[]
   experience         Int?
   hourlyRate         Float?
   monthlyRate        Float?
   bio                String?
-  rating             Float              @default(0)
-  totalRatings       Int                @default(0)
+  rating             Float                     @default(0)
+  totalRatings       Int                       @default(0)
   availableFrom      String?
   availableTo        String?
   workingDays        String?
-  offersSession      Boolean            @default(true)
-  offersMonthly      Boolean            @default(true)
+  offersSession      Boolean                   @default(true)
+  offersMonthly      Boolean                   @default(true)
   weekOffDays        String?
   hoursPerDay        Float?
   availabilityNotes  String?
@@ -128,6 +131,11 @@ model Servant {
   city               String?
   latitude           Float?
   longitude          Float?
+  ageRangesServed    String[]
+  maxChildren        Int?
+  hasCprCert         Boolean                   @default(false)
+  hasFirstAidCert    Boolean                   @default(false)
+  childcareNote      String?
   bankAccountHolder  String?
   bankAccountNumber  String?
   bankName           String?
@@ -147,32 +155,32 @@ model Servant {
   bookings           Booking[]
   timeEntries        TimeEntry[]
   zones              Zone[]
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
 }
 
 model Zone {
-  id          Int      @id @default(autoincrement())
-  servantId   Int
-  servant     Servant  @relation(fields: [servantId], references: [id], onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
+  caregiverId Int
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
   name        String
   description String?
   city        String?
   latitude    Float?
   longitude   Float?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  @@index([servantId])
+  @@index([caregiverId])
   @@index([name])
   @@index([city])
 }
 
-model ServantSkill {
-  id        Int     @id @default(autoincrement())
-  servantId Int
-  servant   Servant @relation(fields: [servantId], references: [id], onDelete: Cascade)
-  skillName String
+model CaregiverSkill {
+  id          Int       @id @default(autoincrement())
+  caregiverId Int
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id], onDelete: Cascade)
+  skillName   String
 }
 
 model Skill {
@@ -187,30 +195,30 @@ model Skill {
   @@index([isActive, sortOrder])
 }
 
-model Agent {
-  id              Int       @id @default(autoincrement())
-  userId          Int       @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+model Coordinator {
+  id              Int         @id @default(autoincrement())
+  userId          Int         @unique
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   agencyName      String?
   address         String?
   city            String?
   latitude        Float?
   longitude       Float?
-  serviceRadiusKm Float     @default(3)
-  servants        Servant[]
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  serviceRadiusKm Float       @default(3)
+  caregivers      Caregiver[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model Booking {
-  id               Int           @id @default(autoincrement())
-  houseOwnerId     Int
-  houseOwner       HouseOwner    @relation(fields: [houseOwnerId], references: [id])
-  servantId        Int?
-  servant          Servant?      @relation(fields: [servantId], references: [id])
-  bookingType      BookingType
-  status           BookingStatus @default(PENDING)
-  requestedSkill   String?
+  id                Int           @id @default(autoincrement())
+  parentId          Int
+  parent            Parent        @relation(fields: [parentId], references: [id])
+  caregiverId       Int?
+  caregiver         Caregiver?    @relation(fields: [caregiverId], references: [id])
+  bookingType       BookingType
+  status            BookingStatus @default(PENDING)
+  requestedSkill    String?
 
   monthlyStartDate DateTime?
   monthlyEndDate   DateTime?
@@ -223,19 +231,19 @@ model Booking {
   sessionHours     Float?
   sessionSlots     String?
 
-  address          String?
-  flatNo           String?
-  building         String?
-  area             String?
-  latitude         Float?
-  longitude        Float?
-  servantLatitude  Float?
-  servantLongitude Float?
-  servantLocationAt DateTime?
-  totalAmount      Float?
-  isPaid           Boolean       @default(false)
-  paymentId        String?
-  notes            String?
+  address              String?
+  flatNo               String?
+  building             String?
+  area                 String?
+  latitude             Float?
+  longitude            Float?
+  caregiverLatitude    Float?
+  caregiverLongitude   Float?
+  caregiverLocationAt  DateTime?
+  totalAmount          Float?
+  isPaid               Boolean       @default(false)
+  paymentId            String?
+  notes                String?
 
   timeEntries      TimeEntry[]
   review           Review?
@@ -266,8 +274,8 @@ model TimeEntry {
   id          Int       @id @default(autoincrement())
   bookingId   Int
   booking     Booking   @relation(fields: [bookingId], references: [id])
-  servantId   Int
-  servant     Servant   @relation(fields: [servantId], references: [id])
+  caregiverId Int
+  caregiver   Caregiver @relation(fields: [caregiverId], references: [id])
   clockIn     DateTime
   clockOut    DateTime?
   hoursWorked Float?
@@ -276,12 +284,13 @@ model TimeEntry {
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
-  bookingId Int      @unique
-  booking   Booking  @relation(fields: [bookingId], references: [id])
-  rating    Float
-  comment   String?
-  createdAt DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  bookingId         Int      @unique
+  booking           Booking  @relation(fields: [bookingId], references: [id])
+  rating            Float
+  childSafetyRating Int?
+  comment           String?
+  createdAt         DateTime @default(now())
 }
 
 model Notification {

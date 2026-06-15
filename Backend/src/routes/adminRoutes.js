@@ -5,17 +5,17 @@ const skillController = require("../controllers/skillController");
 const { authenticate, requireRole } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const { createSkillSchema, updateSkillSchema } = require("../validators/skillValidator");
-const { createAgentSchema, updateAgentSchema } = require("../validators/agentValidator");
+const { createCoordinatorSchema, updateCoordinatorSchema } = require("../validators/coordinatorValidator");
 
 router.use(authenticate, requireRole("ADMIN"));
 
 router.get("/stats", adminController.getStats);
 router.get("/users", adminController.listUsers);
 router.get("/bookings", adminController.listBookings);
-router.get("/servants", adminController.listServants);
-router.get("/agents", adminController.listAgents);
-router.post("/agents", validate(createAgentSchema), adminController.createAgent);
-router.patch("/agents/:id", validate(updateAgentSchema), adminController.updateAgent);
+router.get("/caregivers", adminController.listCaregivers);
+router.get("/coordinators", adminController.listCoordinators);
+router.post("/coordinators", validate(createCoordinatorSchema), adminController.createCoordinator);
+router.patch("/coordinators/:id", validate(updateCoordinatorSchema), adminController.updateCoordinator);
 router.patch("/users/:id/toggle", adminController.toggleUser);
 
 router.get("/skills", skillController.adminListSkills);

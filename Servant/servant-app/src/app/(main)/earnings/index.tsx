@@ -25,10 +25,10 @@ export default function EarningsScreen() {
   });
 
   const { data: profile } = useQuery({
-    queryKey: ['servant-profile'],
+    queryKey: ['caregiver-profile'],
     queryFn: async () => {
-      const res = await api.get('/servants/me');
-      return res.data.data.servant as { hourlyRate?: number | null };
+      const res = await api.get('/caregivers/me');
+      return res.data.data.caregiver as { hourlyRate?: number | null };
     },
   });
 
@@ -129,11 +129,11 @@ export default function EarningsScreen() {
             id: number;
             totalAmount?: number;
             sessionHours?: number | null;
-            houseOwner: { user: { name: string } };
+            parent: { user: { name: string } };
           }) => (
             <GlassCard key={`m-${b.id}`} style={styles.row}>
               <View>
-                <Text style={styles.rowName}>{b.houseOwner.user.name}</Text>
+                <Text style={styles.rowName}>{b.parent.user.name}</Text>
                 <Text style={styles.rowMeta}>{monthLabel}</Text>
               </View>
               <Text style={styles.amt}>
@@ -154,11 +154,11 @@ export default function EarningsScreen() {
             id: number;
             totalAmount?: number;
             sessionHours?: number | null;
-            houseOwner: { user: { name: string } };
+            parent: { user: { name: string } };
           }) => (
             <GlassCard key={b.id} style={styles.row}>
               <View>
-                <Text style={styles.rowName}>{b.houseOwner.user.name}</Text>
+                <Text style={styles.rowName}>{b.parent.user.name}</Text>
                 <Text style={styles.rowMeta}>{t('earnings.completedToday')}</Text>
               </View>
               <Text style={styles.amt}>

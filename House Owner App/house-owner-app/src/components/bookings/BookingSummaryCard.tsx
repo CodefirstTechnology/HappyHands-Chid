@@ -20,7 +20,7 @@ export type BookingSummary = {
   sessionEndTime?: string | null;
   sessionSlots?: string | null;
   createdAt?: string;
-  servant?: { user: { name: string }; verificationStatus?: string } | null;
+  caregiver?: { user: { name: string }; verificationStatus?: string } | null;
   totalAmount?: number | null;
   address?: string | null;
 };
@@ -53,7 +53,7 @@ export function BookingSummaryCard({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
-  const helperName = booking.servant?.user?.name;
+  const helperName = booking.caregiver?.user?.name;
   const category = booking.requestedSkill
     ? localizedSkillLabel(booking.requestedSkill, skills)
     : null;
@@ -79,8 +79,8 @@ export function BookingSummaryCard({
                 {helperName || t('common.waitingHelper')}
               </Text>
               {helperName &&
-              (booking.servant?.verificationStatus === 'VERIFIED' ||
-                !booking.servant?.verificationStatus) ? (
+              (booking.caregiver?.verificationStatus === 'VERIFIED' ||
+                !booking.caregiver?.verificationStatus) ? (
                 <VerifiedBadge />
               ) : null}
             </View>

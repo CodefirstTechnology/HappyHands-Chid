@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, TextInput, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -24,6 +25,10 @@ export default function BookingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const bookingId = id ? parseInt(id, 10) : null;
   const qc = useQueryClient();
+  const [rating, setRating] = useState(5);
+  const [childSafetyRating, setChildSafetyRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const { data: booking, isLoading } = useQuery({
     queryKey: ['booking', id],
@@ -34,11 +39,11 @@ export default function BookingDetailScreen() {
     },
     refetchInterval: (query) => {
       const b = query.state.data;
-      return b?.status === 'PENDING' && !b?.servant ? 5000 : false;
+      return b?.status === 'PENDING' && !b?.caregiver ? 5000 : false;
     },
   });
 
-  const isOpenBroadcast = booking?.status === 'PENDING' && !booking?.servant;
+  const isOpenBroadcast = booking?.status === 'PENDING' && !booking?.caregiver;
 
   const { data: areaHelpers = [] } = useQuery({
     queryKey: [
@@ -52,14 +57,14 @@ export default function BookingDetailScreen() {
       booking?.latitude != null &&
       booking?.longitude != null,
     queryFn: async () => {
-      const res = await api.get('/servants', {
+      const res = await api.get('/caregivers', {
         params: {
           skill: booking!.requestedSkill || undefined,
           latitude: booking!.latitude,
           longitude: booking!.longitude,
         },
       });
-      return res.data.data.servants as { user: { name: string } }[];
+      return res.data.data.caregivers as { user: { name: string } }[];
     },
   });
 
@@ -71,8 +76,8 @@ export default function BookingDetailScreen() {
       ? { latitude: booking.latitude, longitude: booking.longitude }
       : null;
 
-  const servant = tracking?.servant
-    ? { latitude: tracking.servant.latitude, longitude: tracking.servant.longitude }
+  const servant = tracking?.caregiver
+    ? { latitude: tracking.caregiver.latitude, longitude: tracking.caregiver.longitude }
     : null;
   const helperSharing = Boolean(servant);
   const canTrack = trackLive && home;
@@ -89,6 +94,24 @@ export default function BookingDetailScreen() {
     }
   };
 
+  const submitReview = async () => {
+    setSubmittingReview(true);
+    try {
+      await api.post(`/bookings/${id}/review`, {
+        rating,
+        childSafetyRating,
+        comment: reviewComment.trim() || undefined,
+      });
+      qc.invalidateQueries({ queryKey: ['booking', id] });
+      Alert.alert(t('bookings.thankYou'), t('bookings.reviewSubmitted'));
+    } catch (e: unknown) {
+      const err = e as { response?: { data?: { message?: string } } };
+      Alert.alert(t('errors.generic'), err.response?.data?.message || t('errors.couldNotSave'));
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
   if (isLoading || !booking) {
     return (
       <View style={styles.center}>
@@ -98,14 +121,14 @@ export default function BookingDetailScreen() {
   }
 
   const statusHint: Record<string, string> = {
-    PENDING: booking.servant
+    PENDING: booking.caregiver
       ? t('bookings.hintPendingServant')
       : areaHelpers.length > 0
         ? t('bookings.hintPendingBroadcast', { count: areaHelpers.length })
         : t('bookings.hintPendingOpen'),
     CONFIRMED: helperSharing
       ? t('bookings.hintConfirmedSharing', {
-          name: booking.servant?.user?.name || t('common.helper'),
+          name: booking.caregiver?.user?.name || t('common.helper'),
         })
       : t('bookings.hintConfirmedNoShare'),
     ACTIVE: helperSharing ? t('bookings.hintActiveSharing') : t('bookings.hintActiveNoShare'),
@@ -132,10 +155,10 @@ export default function BookingDetailScreen() {
       <GlassCard>
         <View style={styles.nameRow}>
           <Text style={styles.name}>
-            {booking.servant?.user?.name || t('bookings.findingHelper')}
+            {booking.caregiver?.user?.name || t('bookings.findingHelper')}
           </Text>
-          {booking.servant &&
-          (booking.servant.verificationStatus === 'VERIFIED' || !booking.servant.verificationStatus) ? (
+          {booking.caregiver &&
+          (booking.caregiver.verificationStatus === 'VERIFIED' || !booking.caregiver.verificationStatus) ? (
             <VerifiedBadge size="md" />
           ) : null}
         </View>
@@ -185,7 +208,7 @@ export default function BookingDetailScreen() {
         <JobTrackingMap
           home={home}
           servant={servant}
-          lastUpdated={tracking?.servant?.updatedAt ?? null}
+          lastUpdated={tracking?.caregiver?.updatedAt ?? null}
           visitAddress={{
             flatNo: booking.flatNo,
             building: booking.building,
@@ -207,6 +230,50 @@ export default function BookingDetailScreen() {
           style={{ marginTop: 20 }}
         />
       )}
+
+      {booking.status === 'COMPLETED' && !booking.review ? (
+        <GlassCard style={{ marginTop: 20 }}>
+          <Text style={styles.reviewTitle}>{t('bookings.reviewTitle')}</Text>
+          <Text style={styles.reviewLabel}>{t('bookings.overallRating')}</Text>
+          <View style={styles.starRow}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TouchableOpacity key={n} onPress={() => setRating(n)}>
+                <MaterialIcons
+                  name={n <= rating ? 'star' : 'star-border'}
+                  size={32}
+                  color={Stitch.colors.secondary}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={styles.reviewLabel}>{t('bookings.childSafetyRating')}</Text>
+          <View style={styles.starRow}>
+            {[1, 2, 3, 4, 5].map((n) => (
+              <TouchableOpacity key={`safety-${n}`} onPress={() => setChildSafetyRating(n)}>
+                <MaterialIcons
+                  name={n <= childSafetyRating ? 'verified-user' : 'shield'}
+                  size={28}
+                  color={Stitch.colors.primary}
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TextInput
+            style={styles.reviewInput}
+            placeholder={t('bookings.reviewPlaceholder')}
+            placeholderTextColor={Stitch.colors.onSurfaceVariant + '99'}
+            value={reviewComment}
+            onChangeText={setReviewComment}
+            multiline
+          />
+          <GradientButton
+            title={submittingReview ? t('common.saving') : t('bookings.submitReview')}
+            onPress={submitReview}
+            loading={submittingReview}
+            style={{ marginTop: 12 }}
+          />
+        </GlassCard>
+      ) : null}
     </ScrollView>
   );
 }
@@ -245,4 +312,16 @@ const styles = StyleSheet.create({
   onWaySub: { fontSize: 12, color: Stitch.colors.onSurfaceVariant, marginTop: 2, lineHeight: 16 },
   noMap: { marginTop: 16 },
   noMapText: { color: Stitch.colors.onSurfaceVariant, lineHeight: 20 },
+  reviewTitle: { fontSize: 18, fontWeight: '700', color: Stitch.colors.primary, marginBottom: 12 },
+  reviewLabel: { fontSize: 14, fontWeight: '600', color: Stitch.colors.onSurfaceVariant, marginTop: 8 },
+  starRow: { flexDirection: 'row', gap: 8, marginTop: 8, marginBottom: 4 },
+  reviewInput: {
+    marginTop: 12,
+    minHeight: 80,
+    borderRadius: Stitch.radius.md,
+    backgroundColor: Stitch.colors.surfaceLow,
+    padding: 12,
+    fontSize: 15,
+    textAlignVertical: 'top',
+  },
 });

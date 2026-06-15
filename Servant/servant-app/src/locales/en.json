@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "StaffEra",
-    "appNamePro": "StaffEra Pro",
+    "appName": "ChildCare",
+    "appNamePro": "ChildCare Pro",
     "loading": "Loading…",
     "saving": "Saving…",
     "save": "Save",
@@ -68,7 +68,7 @@
     "tryAgain": "Please try again",
     "wrongRole": "This account is not a house owner. Use the Servant or Agent app.",
     "wrongRoleServant": "This account is not a servant. Use the House Owner or Agent app.",
-    "joinTitle": "Join StaffEra",
+    "joinTitle": "Join ChildCare",
     "joinSubtitle": "Book verified help for your home",
     "fullName": "Full name",
     "phone": "Phone (+91)",
@@ -86,7 +86,7 @@
     "servantJoinSubtitle": "Submit your details to apply as a helper.",
     "register": "Register",
     "registrationAgentContact": "An agent will contact you soon. After verification they will share your password — then you can sign in below.",
-    "registrationSuccessBody": "Your application was submitted. A StaffEra agent will contact you to verify your details and give you login credentials.",
+    "registrationSuccessBody": "Your application was submitted. A ChildCare agent will contact you to verify your details and give you login credentials.",
     "registrationEmailNote": "We saved your email: {{email}}",
     "goToSignIn": "Go to sign in",
     "addressManual": "Address (type or edit)",
@@ -442,13 +442,21 @@
     "screenTitle": "Service zones",
     "screenSub": "Add areas where you are available to work. House owners can find you by zone."
   },
-  "servantProfile": {
+  "caregiverHome": {
+    "todaySchedule": "Today's care schedule"
+  },
+  "caregiverProfile": {
+    "childcareDetails": "Childcare details",
+    "ageRanges": "Age ranges served",
+    "maxChildren": "Max children",
+    "cprCert": "CPR certified",
+    "firstAidCert": "First aid certified",
     "rating": "Rating",
     "perHour": "Per hour",
     "experience": "Experience",
     "yourSkills": "Your skills",
     "aboutYou": "About you",
-    "serviceZonesSub": "Set by your agent — customers near these areas see your open requests"
+    "serviceZonesSub": "Set by your coordinator — parents near these areas see your open requests"
   },
   "workOtp": {
     "requestOtp": "I arrived — get OTP",
@@ -491,7 +499,7 @@
       "title": "Helper has arrived",
       "body": "Your helper clocked in at your home"
     },
-    "SERVANT_VERIFIED": {
+    "CAREGIVER_VERIFIED": {
       "title": "You are verified",
       "body": "Your profile is verified — you can accept jobs"
     },

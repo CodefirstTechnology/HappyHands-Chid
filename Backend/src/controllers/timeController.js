@@ -20,23 +20,23 @@ const isInMonth = (value, start, end) => {
   return d >= start && d <= end;
 };
 
-const getServant = async (userId) => {
-  const servant = await prisma.servant.findUnique({ where: { userId } });
-  if (!servant) throw new ApiError(404, "Servant profile not found");
-  return servant;
+const getCaregiver = async (userId) => {
+  const caregiver = await prisma.caregiver.findUnique({ where: { userId } });
+  if (!caregiver) throw new ApiError(404, "Caregiver profile not found");
+  return caregiver;
 };
 
 exports.clockIn = async (req, res) => {
   const { bookingId } = req.body;
   if (!bookingId) throw new ApiError(400, "bookingId is required");
 
-  const servant = await getServant(req.user.id);
+  const caregiver = await getCaregiver(req.user.id);
 
   const booking = await prisma.booking.findUnique({
     where: { id: bookingId }
   });
 
-  if (!booking || booking.servantId !== servant.id) {
+  if (!booking || booking.caregiverId !== caregiver.id) {
     throw new ApiError(404, "Booking not found");
   }
   if (!["CONFIRMED", "ACTIVE"].includes(booking.status)) {
@@ -46,13 +46,13 @@ exports.clockIn = async (req, res) => {
   if (booking.status === "CONFIRMED") {
     const pending = await hasPendingWorkOtp(bookingId);
     if (pending) {
-      throw new ApiError(400, "Enter the 4-digit OTP from the home owner to start work");
+      throw new ApiError(400, "Enter the 4-digit care-start OTP from the parent to start work");
     }
-    throw new ApiError(400, "Tap I arrived to get an OTP from the home owner first");
+    throw new ApiError(400, "Tap I arrived to get a care-start OTP from the parent first");
   }
 
   const openEntry = await prisma.timeEntry.findFirst({
-    where: { servantId: servant.id, clockOut: null }
+    where: { caregiverId: caregiver.id, clockOut: null }
   });
   if (openEntry) {
     throw new ApiError(400, "Already clocked in. Clock out first.");
@@ -63,7 +63,7 @@ exports.clockIn = async (req, res) => {
     const e = await tx.timeEntry.create({
       data: {
         bookingId,
-        servantId: servant.id,
+        caregiverId: caregiver.id,
         clockIn: now,
         date: now
       }
@@ -79,15 +79,15 @@ exports.clockIn = async (req, res) => {
     return e;
   });
 
-  const owner = await prisma.houseOwner.findUnique({
-    where: { id: booking.houseOwnerId },
+  const owner = await prisma.parent.findUnique({
+    where: { id: booking.parentId },
     select: { userId: true }
   });
   if (owner?.userId) {
     await createNotification({
       userId: owner.userId,
-      title: "Helper has arrived",
-      body: "Your helper started work at your location",
+      title: "Caregiver has arrived",
+      body: "Your caregiver started work at your location",
       type: "BOOKING_ACTIVE",
       data: { bookingId }
     });
@@ -97,10 +97,10 @@ exports.clockIn = async (req, res) => {
 };
 
 exports.clockOut = async (req, res) => {
-  const servant = await getServant(req.user.id);
+  const caregiver = await getCaregiver(req.user.id);
 
   const openEntry = await prisma.timeEntry.findFirst({
-    where: { servantId: servant.id, clockOut: null },
+    where: { caregiverId: caregiver.id, clockOut: null },
     orderBy: { clockIn: "desc" }
   });
 
@@ -117,13 +117,13 @@ exports.clockOut = async (req, res) => {
 
   const booking = await prisma.booking.findUnique({
     where: { id: openEntry.bookingId },
-    include: { timeEntries: true, servant: { select: { hourlyRate: true } } }
+    include: { timeEntries: true, caregiver: { select: { hourlyRate: true } } }
   });
 
   if (booking && ["CONFIRMED", "ACTIVE"].includes(booking.status)) {
     const totalAmount = computeBookingEarnings(
       { ...booking, timeEntries: booking.timeEntries },
-      booking.servant?.hourlyRate
+      booking.caregiver?.hourlyRate
     );
     const sessionEnded = booking.bookingType === "SESSION" && isSessionPast(booking, now);
 
@@ -140,7 +140,7 @@ exports.clockOut = async (req, res) => {
 };
 
 exports.getToday = async (req, res) => {
-  const servant = await getServant(req.user.id);
+  const caregiver = await getCaregiver(req.user.id);
   const start = new Date();
   start.setHours(0, 0, 0, 0);
   const end = new Date();
@@ -148,7 +148,7 @@ exports.getToday = async (req, res) => {
 
   const entries = await prisma.timeEntry.findMany({
     where: {
-      servantId: servant.id,
+      caregiverId: caregiver.id,
       date: { gte: start, lte: end }
     },
     include: { booking: { select: { id: true, address: true, bookingType: true } } },
@@ -157,32 +157,32 @@ exports.getToday = async (req, res) => {
 
   const totalHours = entries.reduce((sum, e) => sum + (e.hoursWorked || 0), 0);
 
-  const servantProfile = await prisma.servant.findUnique({
-    where: { id: servant.id },
+  const caregiverProfile = await prisma.caregiver.findUnique({
+    where: { id: caregiver.id },
     select: { hourlyRate: true }
   });
-  const hourlyRate = servantProfile?.hourlyRate || 0;
+  const hourlyRate = caregiverProfile?.hourlyRate || 0;
   const estimatedEarnings = Math.round(totalHours * hourlyRate * 100) / 100;
 
   sendSuccess(res, { entries, totalHours, hourlyRate, estimatedEarnings });
 };
 
 exports.getMonth = async (req, res) => {
-  const servant = await getServant(req.user.id);
+  const caregiver = await getCaregiver(req.user.id);
   const now = new Date();
   const { start, end } = getMonthBounds(now);
 
-  await expireStaleSessionBookings({ servantId: servant.id });
+  await expireStaleSessionBookings({ caregiverId: caregiver.id });
 
   const completed = await prisma.booking.findMany({
     where: {
-      servantId: servant.id,
+      caregiverId: caregiver.id,
       status: "COMPLETED"
     },
     include: { timeEntries: true }
   });
 
-  const hourlyRate = servant.hourlyRate || 0;
+  const hourlyRate = caregiver.hourlyRate || 0;
   const inMonth = completed.filter((booking) => {
     const earningsDate = getBookingEarningsDate(booking);
     return isInMonth(earningsDate, start, end) || isInMonth(booking.updatedAt, start, end);
@@ -202,19 +202,19 @@ exports.getMonth = async (req, res) => {
 };
 
 exports.getHistory = async (req, res) => {
-  const servant = await getServant(req.user.id);
+  const caregiver = await getCaregiver(req.user.id);
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
 
   const [entries, total] = await Promise.all([
     prisma.timeEntry.findMany({
-      where: { servantId: servant.id },
+      where: { caregiverId: caregiver.id },
       include: { booking: true },
       orderBy: { date: "desc" },
       skip: (page - 1) * limit,
       take: limit
     }),
-    prisma.timeEntry.count({ where: { servantId: servant.id } })
+    prisma.timeEntry.count({ where: { caregiverId: caregiver.id } })
   ]);
 
   sendSuccess(res, { entries, pagination: { page, limit, total } });

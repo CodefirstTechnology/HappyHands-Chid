@@ -24,10 +24,10 @@ export default function AdminDashboard() {
   })
 
   const { data: agents } = useQuery({
-    queryKey: ['admin-agents-dashboard'],
+    queryKey: ['admin-coordinators-dashboard'],
     queryFn: async () => {
-      const res = await api.get('/admin/agents', { params: { limit: 10 } })
-      return res.data.data.agents
+      const res = await api.get('/admin/coordinators', { params: { limit: 10 } })
+      return res.data.data.coordinators
     },
   })
 
@@ -42,10 +42,10 @@ export default function AdminDashboard() {
   if (isLoading) return <p>Loading…</p>
 
   const cards = [
-    { label: 'Total Owners', value: stats.totalOwners },
-    { label: 'Field Agents', value: stats.totalAgents },
-    { label: 'Total Servants', value: stats.totalServants },
-    { label: 'Verified Servants', value: stats.verifiedServants },
+    { label: 'Total Parents', value: stats.totalParents },
+    { label: 'Coordinators', value: stats.totalCoordinators },
+    { label: 'Total Caregivers', value: stats.totalCaregivers },
+    { label: 'Verified Caregivers', value: stats.verifiedCaregivers },
     { label: 'Total Bookings', value: stats.totalBookings },
     { label: 'Active Bookings', value: stats.activeBookings },
     { label: 'Total Revenue', value: `₹${stats.totalRevenue?.toLocaleString()}` },
@@ -120,7 +120,7 @@ export default function AdminDashboard() {
                       <p>{a.city || a.address || '—'}</p>
                     </div>
                   </td>
-                  <td>{a._count?.servants ?? 0}</td>
+                  <td>{a._count?.caregivers ?? 0}</td>
                   <td className="font-medium text-amber-700">
                     ₹{(a.annualRevenue ?? 0).toLocaleString('en-IN')}
                   </td>
@@ -147,8 +147,8 @@ export default function AdminDashboard() {
           <tbody>
             {(bookings || []).map((b) => (
               <tr key={b.id} className="border-b">
-                <td className="py-2">{b.houseOwner?.user?.name}</td>
-                <td>{b.servant?.user?.name}</td>
+                <td className="py-2">{b.parent?.user?.name}</td>
+                <td>{b.caregiver?.user?.name}</td>
                 <td>{b.bookingType}</td>
                 <td>
                   <Badge status={b.status} />

@@ -14,7 +14,7 @@ function formatDob(value) {
   return value
 }
 
-export function AadhaarXmlVerify({ servantId, servant, compact = false }) {
+export function AadhaarXmlVerify({ caregiverId, servant, compact = false }) {
   const qc = useQueryClient()
   const [zipFile, setZipFile] = useState(null)
   const [shareCode, setShareCode] = useState('')
@@ -40,12 +40,12 @@ export function AadhaarXmlVerify({ servantId, servant, compact = false }) {
 
     setLoading(true)
     try {
-      await api.post(`/kyc/aadhaar/xml/verify/${servantId}`, fd, {
+      await api.post(`/kyc/aadhaar/xml/verify/${caregiverId}`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setZipFile(null)
       setShareCode('')
-      qc.invalidateQueries({ queryKey: ['servant', String(servantId)] })
+      qc.invalidateQueries({ queryKey: ['caregiver', String(caregiverId)] })
     } catch (e) {
       setError(e.response?.data?.message || 'Aadhaar verification failed')
     } finally {

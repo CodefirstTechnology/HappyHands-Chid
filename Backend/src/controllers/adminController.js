@@ -10,10 +10,10 @@ const {
   serializeUser,
   userWithRoleInclude
 } = require("../services/roleService");
-const { attachAnnualRevenueToAgents } = require("../services/agentRevenueService");
+const { attachAnnualRevenueToCoordinators } = require("../services/coordinatorRevenueService");
 const { DEFAULT_RADIUS_KM } = require("../services/locationService");
 
-const generateAgentPassword = () => {
+const generateCoordinatorPassword = () => {
   const part = crypto.randomBytes(4).toString("hex");
   return `Ag${part}1`;
 };
@@ -23,10 +23,10 @@ exports.getStats = async (req, res) => {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const [
-    totalOwners,
-    totalAgents,
-    totalServants,
-    verifiedServants,
+    totalParents,
+    totalCoordinators,
+    totalCaregivers,
+    verifiedCaregivers,
     pendingVerification,
     totalBookings,
     activeBookings,
@@ -35,11 +35,11 @@ exports.getStats = async (req, res) => {
     monthBookings,
     monthRevenue
   ] = await Promise.all([
-    prisma.houseOwner.count(),
-    prisma.agent.count(),
-    prisma.servant.count(),
-    prisma.servant.count({ where: { verificationStatus: "VERIFIED" } }),
-    prisma.servant.count({
+    prisma.parent.count(),
+    prisma.coordinator.count(),
+    prisma.caregiver.count(),
+    prisma.caregiver.count({ where: { verificationStatus: "VERIFIED" } }),
+    prisma.caregiver.count({
       where: { verificationStatus: { in: ["PENDING", "UNDER_REVIEW"] } }
     }),
     prisma.booking.count(),
@@ -84,10 +84,10 @@ exports.getStats = async (req, res) => {
   }
 
   sendSuccess(res, {
-    totalOwners,
-    totalAgents,
-    totalServants,
-    verifiedServants,
+    totalParents,
+    totalCoordinators,
+    totalCaregivers,
+    verifiedCaregivers,
     pendingVerification,
     totalBookings,
     activeBookings,
@@ -130,7 +130,7 @@ exports.listUsers = async (req, res) => {
         isActive: true,
         createdAt: true,
         role: { select: { id: true, code: true, label: true } },
-        houseOwner: { select: { city: true, address: true } }
+        parent: { select: { city: true, address: true } }
       },
       skip: (page - 1) * limit,
       take: limit,
@@ -159,8 +159,8 @@ exports.listBookings = async (req, res) => {
     prisma.booking.findMany({
       where,
       include: {
-        houseOwner: { include: { user: { select: { name: true } } } },
-        servant: { include: { user: { select: { name: true } } } }
+        parent: { include: { user: { select: { name: true } } } },
+        caregiver: { include: { user: { select: { name: true } } } }
       },
       skip: (page - 1) * limit,
       take: limit,
@@ -172,32 +172,32 @@ exports.listBookings = async (req, res) => {
   sendSuccess(res, { bookings, pagination: { page, limit, total } });
 };
 
-exports.listServants = async (req, res) => {
+exports.listCaregivers = async (req, res) => {
   const { status } = req.query;
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
 
   const where = status ? { verificationStatus: status } : {};
 
-  const [servants, total] = await Promise.all([
-    prisma.servant.findMany({
+  const [caregivers, total] = await Promise.all([
+    prisma.caregiver.findMany({
       where,
       include: {
         user: { select: { name: true, email: true } },
-        agent: { include: { user: { select: { name: true } } } },
+        coordinator: { include: { user: { select: { name: true } } } },
         skills: true
       },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: "desc" }
     }),
-    prisma.servant.count({ where })
+    prisma.caregiver.count({ where })
   ]);
 
-  sendSuccess(res, { servants, pagination: { page, limit, total } });
+  sendSuccess(res, { caregivers, pagination: { page, limit, total } });
 };
 
-exports.listAgents = async (req, res) => {
+exports.listCoordinators = async (req, res) => {
   const { search, city } = req.query;
   const page = Math.max(1, parseInt(req.query.page, 10) || 1);
   const limit = Math.min(100, parseInt(req.query.limit, 10) || 20);
@@ -219,8 +219,8 @@ exports.listAgents = async (req, res) => {
       : {})
   };
 
-  const [agents, total] = await Promise.all([
-    prisma.agent.findMany({
+  const [coordinators, total] = await Promise.all([
+    prisma.coordinator.findMany({
       where,
       include: {
         user: {
@@ -233,21 +233,21 @@ exports.listAgents = async (req, res) => {
             createdAt: true
           }
         },
-        _count: { select: { servants: true } }
+        _count: { select: { caregivers: true } }
       },
       skip: (page - 1) * limit,
       take: limit,
       orderBy: { createdAt: "desc" }
     }),
-    prisma.agent.count({ where })
+    prisma.coordinator.count({ where })
   ]);
 
-  const agentsWithRevenue = await attachAnnualRevenueToAgents(agents);
+  const coordinatorsWithRevenue = await attachAnnualRevenueToCoordinators(coordinators);
 
-  sendSuccess(res, { agents: agentsWithRevenue, pagination: { page, limit, total } });
+  sendSuccess(res, { coordinators: coordinatorsWithRevenue, pagination: { page, limit, total } });
 };
 
-exports.createAgent = async (req, res) => {
+exports.createCoordinator = async (req, res) => {
   const {
     name,
     agencyName,
@@ -270,7 +270,7 @@ exports.createAgent = async (req, res) => {
   if (existing) throw new ApiError(400, "Email or phone already registered");
 
   if (!password || generatePassword) {
-    password = generateAgentPassword();
+    password = generateCoordinatorPassword();
   } else if (password.length < 6) {
     throw new ApiError(400, "Password must be at least 6 characters");
   }
@@ -283,8 +283,8 @@ exports.createAgent = async (req, res) => {
       email,
       phone,
       password: hashed,
-      roleId: ROLE_IDS.AGENT,
-      agent: {
+      roleId: ROLE_IDS.COORDINATOR,
+      coordinator: {
         create: {
           agencyName: agencyName?.trim() || null,
           address: address.trim(),
@@ -298,13 +298,13 @@ exports.createAgent = async (req, res) => {
         }
       }
     },
-    include: { agent: true, ...userWithRoleInclude }
+    include: { coordinator: true, ...userWithRoleInclude }
   });
 
   sendSuccess(
     res,
     {
-      agent: user.agent,
+      coordinator: user.coordinator,
       user: serializeUser(user),
       credentials: { email, password }
     },
@@ -312,9 +312,9 @@ exports.createAgent = async (req, res) => {
   );
 };
 
-exports.updateAgent = async (req, res) => {
+exports.updateCoordinator = async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const existing = await prisma.agent.findUnique({
+  const existing = await prisma.coordinator.findUnique({
     where: { id },
     include: {
       user: {
@@ -327,14 +327,14 @@ exports.updateAgent = async (req, res) => {
           createdAt: true
         }
       },
-      _count: { select: { servants: true } }
+      _count: { select: { caregivers: true } }
     }
   });
-  if (!existing) throw new ApiError(404, "Agent not found");
+  if (!existing) throw new ApiError(404, "Coordinator not found");
 
   const { agencyName, address, city, latitude, longitude, serviceRadiusKm } = req.body;
 
-  const agent = await prisma.agent.update({
+  const coordinator = await prisma.coordinator.update({
     where: { id },
     data: {
       ...(agencyName !== undefined && { agencyName: agencyName?.trim() || null }),
@@ -357,12 +357,12 @@ exports.updateAgent = async (req, res) => {
           createdAt: true
         }
       },
-      _count: { select: { servants: true } }
+      _count: { select: { caregivers: true } }
     }
   });
 
-  const [agentWithRevenue] = await attachAnnualRevenueToAgents([agent]);
-  sendSuccess(res, { agent: agentWithRevenue });
+  const [coordinatorWithRevenue] = await attachAnnualRevenueToCoordinators([coordinator]);
+  sendSuccess(res, { coordinator: coordinatorWithRevenue });
 };
 
 exports.toggleUser = async (req, res) => {

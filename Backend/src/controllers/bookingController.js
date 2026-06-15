@@ -17,19 +17,19 @@ const {
   hasPendingWorkOtp
 } = require("../services/workStartOtpService");
 const {
-  findServantsNearLocation,
-  servantCoversLocation,
-  bookingMatchesServantSkill
+  findCaregiversNearLocation,
+  caregiverCoversLocation,
+  bookingMatchesCaregiverSkill
 } = require("../services/locationService");
 
 const bookingInclude = {
-  servant: {
+  caregiver: {
     include: {
       user: { select: { id: true, name: true, phone: true } },
       skills: true
     }
   },
-  houseOwner: {
+  parent: {
     include: { user: { select: { id: true, name: true, phone: true } } }
   },
   review: true,
@@ -41,8 +41,8 @@ const loadBooking = (id) =>
     where: { id },
     include: {
       ...bookingInclude,
-      servant: { include: { user: { select: { id: true } }, skills: true } },
-      houseOwner: { include: { user: { select: { id: true, name: true, phone: true } } } }
+      caregiver: { include: { user: { select: { id: true } }, skills: true } },
+      parent: { include: { user: { select: { id: true, name: true, phone: true } } } }
     }
   });
 
@@ -91,10 +91,10 @@ const normalizeSessionBooking = (body) => {
 };
 
 exports.createBooking = async (req, res) => {
-  const houseOwner = await prisma.houseOwner.findUnique({
+  const parent = await prisma.parent.findUnique({
     where: { userId: req.user.id }
   });
-  if (!houseOwner) throw new ApiError(403, "House owner profile required");
+  if (!parent) throw new ApiError(403, "Parent profile required");
 
   const sessionFields = normalizeSessionBooking(req.body);
   const bookingData = {
@@ -113,14 +113,14 @@ exports.createBooking = async (req, res) => {
       : undefined
   };
 
-  const latitude = bookingData.latitude ?? houseOwner.latitude ?? undefined;
-  const longitude = bookingData.longitude ?? houseOwner.longitude ?? undefined;
-  const address = bookingData.address || houseOwner.address;
-  const flatNo = bookingData.flatNo ?? houseOwner.flatNo ?? undefined;
-  const building = bookingData.building ?? houseOwner.building ?? undefined;
-  const area = bookingData.area ?? houseOwner.area ?? undefined;
+  const latitude = bookingData.latitude ?? parent.latitude ?? undefined;
+  const longitude = bookingData.longitude ?? parent.longitude ?? undefined;
+  const address = bookingData.address || parent.address;
+  const flatNo = bookingData.flatNo ?? parent.flatNo ?? undefined;
+  const building = bookingData.building ?? parent.building ?? undefined;
+  const area = bookingData.area ?? parent.area ?? undefined;
 
-  if (!req.body.servantId) {
+  if (!req.body.caregiverId) {
     if (
       latitude == null ||
       longitude == null ||
@@ -135,8 +135,8 @@ exports.createBooking = async (req, res) => {
 
     const booking = await prisma.booking.create({
       data: {
-        houseOwnerId: houseOwner.id,
-        servantId: null,
+        parentId: parent.id,
+        caregiverId: null,
         bookingType: bookingData.bookingType,
         requestedSkill: bookingData.requestedSkill,
         monthlyStartDate: bookingData.monthlyStartDate,
@@ -161,16 +161,16 @@ exports.createBooking = async (req, res) => {
       include: bookingInclude
     });
 
-    const nearbyServants = await findServantsNearLocation(latitude, longitude, {
+    const nearbyCaregivers = await findCaregiversNearLocation(latitude, longitude, {
       skill: bookingData.requestedSkill
     });
 
     await Promise.all(
-      nearbyServants.map((servant) =>
+      nearbyCaregivers.map((caregiver) =>
         createNotification({
-          userId: servant.user.id,
+          userId: caregiver.user.id,
           title: "Job request in your area",
-          body: "A customer nearby needs help — accept first to get the job",
+          body: "A parent nearby needs childcare — accept first to get the booking",
           type: "BOOKING_OPEN",
           data: { bookingId: booking.id }
         })
@@ -182,37 +182,37 @@ exports.createBooking = async (req, res) => {
       {
         booking,
         broadcast: {
-          notifiedServants: nearbyServants.length,
-          helperNames: nearbyServants.map((s) => s.user.name)
+          notifiedCaregivers: nearbyCaregivers.length,
+          caregiverNames: nearbyCaregivers.map((s) => s.user.name)
         }
       },
       201
     );
   }
 
-  const servant = await prisma.servant.findUnique({
-    where: { id: req.body.servantId },
+  const caregiver = await prisma.caregiver.findUnique({
+    where: { id: req.body.caregiverId },
     include: { zones: true }
   });
-  if (!servant || servant.verificationStatus !== "VERIFIED") {
-    throw new ApiError(400, "Servant not available for booking");
+  if (!caregiver || caregiver.verificationStatus !== "VERIFIED") {
+    throw new ApiError(400, "Caregiver not available for booking");
   }
 
   if (
     latitude != null &&
     longitude != null &&
-    !servantCoversLocation(servant, latitude, longitude)
+    !caregiverCoversLocation(caregiver, latitude, longitude)
   ) {
-    throw new ApiError(400, "This helper does not serve your area");
+    throw new ApiError(400, "This caregiver does not serve your area");
   }
 
   const booking = await prisma.$transaction(async (tx) => {
-    await checkBookingConflict(servant.id, bookingData, undefined, houseOwner.id);
+    await checkBookingConflict(caregiver.id, bookingData, undefined, parent.id);
 
     return tx.booking.create({
       data: {
-        houseOwnerId: houseOwner.id,
-        servantId: servant.id,
+        parentId: parent.id,
+        caregiverId: caregiver.id,
         bookingType: bookingData.bookingType,
         requestedSkill: bookingData.requestedSkill,
         monthlyStartDate: bookingData.monthlyStartDate,
@@ -238,13 +238,13 @@ exports.createBooking = async (req, res) => {
     });
   });
 
-  const servantUser = await prisma.user.findUnique({
-    where: { id: servant.userId }
+  const caregiverUser = await prisma.user.findUnique({
+    where: { id: caregiver.userId }
   });
 
-  if (servantUser) {
+  if (caregiverUser) {
     await createNotification({
-      userId: servantUser.id,
+      userId: caregiverUser.id,
       title: "New booking request",
       body: "You have a new booking request",
       type: "BOOKING_CREATED",
@@ -259,14 +259,14 @@ exports.listBookings = async (req, res) => {
   const { status } = req.query;
   let where = {};
 
-  if (req.user.role === "HOUSE_OWNER") {
-    const ho = await prisma.houseOwner.findUnique({ where: { userId: req.user.id } });
-    if (!ho) throw new ApiError(403, "House owner profile required");
-    where.houseOwnerId = ho.id;
-  } else if (req.user.role === "SERVANT") {
-    const s = await prisma.servant.findUnique({ where: { userId: req.user.id } });
-    if (!s) throw new ApiError(403, "Servant profile required");
-    where.servantId = s.id;
+  if (req.user.role === "PARENT") {
+    const ho = await prisma.parent.findUnique({ where: { userId: req.user.id } });
+    if (!ho) throw new ApiError(403, "Parent profile required");
+    where.parentId = ho.id;
+  } else if (req.user.role === "CAREGIVER") {
+    const s = await prisma.caregiver.findUnique({ where: { userId: req.user.id } });
+    if (!s) throw new ApiError(403, "Caregiver profile required");
+    where.caregiverId = s.id;
   } else {
     throw new ApiError(403, "Not allowed");
   }
@@ -286,15 +286,15 @@ exports.listBookings = async (req, res) => {
 };
 
 exports.listOpenRequests = async (req, res) => {
-  const servant = await prisma.servant.findUnique({
+  const caregiver = await prisma.caregiver.findUnique({
     where: { userId: req.user.id },
     include: { skills: true, zones: true, user: { select: { name: true } } }
   });
-  if (!servant) throw new ApiError(403, "Servant profile required");
+  if (!caregiver) throw new ApiError(403, "Caregiver profile required");
 
   const openBookings = await prisma.booking.findMany({
     where: {
-      servantId: null,
+      caregiverId: null,
       status: "PENDING",
       latitude: { not: null },
       longitude: { not: null }
@@ -306,8 +306,8 @@ exports.listOpenRequests = async (req, res) => {
 
   const requests = openBookings.filter(
     (booking) =>
-      servantCoversLocation(servant, booking.latitude, booking.longitude) &&
-      bookingMatchesServantSkill(booking, servant)
+      caregiverCoversLocation(caregiver, booking.latitude, booking.longitude) &&
+      bookingMatchesCaregiverSkill(booking, caregiver)
   );
 
   sendSuccess(res, { requests });
@@ -328,30 +328,30 @@ exports.getBooking = async (req, res) => {
 };
 
 const assertBookingAccess = async (req, booking) => {
-  if (req.user.role === "HOUSE_OWNER") {
-    if (booking.houseOwner.userId !== req.user.id) {
+  if (req.user.role === "PARENT") {
+    if (booking.parent.userId !== req.user.id) {
       throw new ApiError(403, "Not your booking");
     }
-  } else if (req.user.role === "SERVANT") {
-    const servant = await prisma.servant.findUnique({
+  } else if (req.user.role === "CAREGIVER") {
+    const caregiver = await prisma.caregiver.findUnique({
       where: { userId: req.user.id },
       include: { skills: true, zones: true }
     });
-    if (!servant) throw new ApiError(403, "Servant profile required");
+    if (!caregiver) throw new ApiError(403, "Caregiver profile required");
 
-    const isAssigned = booking.servantId === servant.id;
+    const isAssigned = booking.caregiverId === caregiver.id;
     const isOpenNearby =
-      booking.servantId == null &&
+      booking.caregiverId == null &&
       booking.status === "PENDING" &&
       booking.latitude != null &&
       booking.longitude != null &&
-      servantCoversLocation(servant, booking.latitude, booking.longitude) &&
-      bookingMatchesServantSkill(booking, servant);
+      caregiverCoversLocation(caregiver, booking.latitude, booking.longitude) &&
+      bookingMatchesCaregiverSkill(booking, caregiver);
 
     if (!isAssigned && !isOpenNearby) {
       throw new ApiError(403, "Not your booking");
     }
-  } else if (!["ADMIN", "AGENT"].includes(req.user.role)) {
+  } else if (!["ADMIN", "COORDINATOR"].includes(req.user.role)) {
     throw new ApiError(403, "Access denied");
   }
 };
@@ -365,21 +365,21 @@ exports.confirmBooking = async (req, res) => {
     throw new ApiError(400, "Booking is not pending");
   }
 
-  const servant = await prisma.servant.findUnique({
+  const caregiver = await prisma.caregiver.findUnique({
     where: { userId: req.user.id },
     include: { skills: true, zones: true, user: { select: { name: true } } }
   });
-  if (!servant) throw new ApiError(403, "Servant profile required");
+  if (!caregiver) throw new ApiError(403, "Caregiver profile required");
 
-  if (booking.servantId == null) {
+  if (booking.caregiverId == null) {
     if (
       booking.latitude == null ||
       booking.longitude == null ||
-      !servantCoversLocation(servant, booking.latitude, booking.longitude)
+      !caregiverCoversLocation(caregiver, booking.latitude, booking.longitude)
     ) {
       throw new ApiError(403, "This request is outside your service area");
     }
-    if (!bookingMatchesServantSkill(booking, servant)) {
+    if (!bookingMatchesCaregiverSkill(booking, caregiver)) {
       throw new ApiError(403, "This request does not match your skills");
     }
 
@@ -393,17 +393,17 @@ exports.confirmBooking = async (req, res) => {
       workingDays: booking.workingDays,
       hoursPerDay: booking.hoursPerDay
     };
-    await checkBookingConflict(servant.id, conflictData, booking.id);
+    await checkBookingConflict(caregiver.id, conflictData, booking.id);
 
     const claimed = await prisma.booking.updateMany({
-      where: { id, servantId: null, status: "PENDING" },
-      data: { servantId: servant.id, status: "CONFIRMED" }
+      where: { id, caregiverId: null, status: "PENDING" },
+      data: { caregiverId: caregiver.id, status: "CONFIRMED" }
     });
 
     if (claimed.count === 0) {
       throw new ApiError(
         409,
-        "Another helper already accepted this request. Check open requests for more jobs."
+        "Another caregiver already accepted this request. Check open requests for more bookings."
       );
     }
 
@@ -413,8 +413,8 @@ exports.confirmBooking = async (req, res) => {
     });
 
     const ownerUserId = (
-      await prisma.houseOwner.findUnique({
-        where: { id: booking.houseOwnerId },
+      await prisma.parent.findUnique({
+        where: { id: booking.parentId },
         select: { userId: true }
       })
     )?.userId;
@@ -422,8 +422,8 @@ exports.confirmBooking = async (req, res) => {
     if (ownerUserId) {
       await createNotification({
         userId: ownerUserId,
-        title: "Helper assigned",
-        body: `${servant.user?.name || "A helper"} accepted your request`,
+        title: "Caregiver assigned",
+        body: `${caregiver.user?.name || "A caregiver"} accepted your request`,
         type: "BOOKING_CONFIRMED",
         data: { bookingId: id }
       });
@@ -432,8 +432,8 @@ exports.confirmBooking = async (req, res) => {
     return sendSuccess(res, { booking: updated });
   }
 
-  if (booking.servant.userId !== req.user.id) {
-    throw new ApiError(403, "Only the assigned servant can confirm");
+  if (booking.caregiver.userId !== req.user.id) {
+    throw new ApiError(403, "Only the assigned caregiver can confirm");
   }
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -447,7 +447,7 @@ exports.confirmBooking = async (req, res) => {
       workingDays: booking.workingDays,
       hoursPerDay: booking.hoursPerDay
     };
-    await checkBookingConflict(booking.servantId, conflictData, booking.id);
+    await checkBookingConflict(booking.caregiverId, conflictData, booking.id);
 
     return tx.booking.update({
       where: { id },
@@ -457,8 +457,8 @@ exports.confirmBooking = async (req, res) => {
   });
 
   const ownerUserId = (
-    await prisma.houseOwner.findUnique({
-      where: { id: booking.houseOwnerId },
+    await prisma.parent.findUnique({
+      where: { id: booking.parentId },
       select: { userId: true }
     })
   ).userId;
@@ -482,11 +482,11 @@ exports.rejectBooking = async (req, res) => {
   if (booking.status !== "PENDING") {
     throw new ApiError(400, "Booking is not pending");
   }
-  if (booking.servantId == null) {
+  if (booking.caregiverId == null) {
     throw new ApiError(400, "Open area requests cannot be declined — ignore if unavailable");
   }
-  if (booking.servant.userId !== req.user.id) {
-    throw new ApiError(403, "Only the assigned servant can reject");
+  if (booking.caregiver.userId !== req.user.id) {
+    throw new ApiError(403, "Only the assigned caregiver can reject");
   }
 
   const updated = await prisma.booking.update({
@@ -496,8 +496,8 @@ exports.rejectBooking = async (req, res) => {
   });
 
   const ownerUserId = (
-    await prisma.houseOwner.findUnique({
-      where: { id: booking.houseOwnerId },
+    await prisma.parent.findUnique({
+      where: { id: booking.parentId },
       select: { userId: true }
     })
   )?.userId;
@@ -506,7 +506,7 @@ exports.rejectBooking = async (req, res) => {
     await createNotification({
       userId: ownerUserId,
       title: "Booking declined",
-      body: req.body.reason || "The helper is unavailable for this booking",
+      body: req.body.reason || "The caregiver is unavailable for this booking",
       type: "BOOKING_REJECTED",
       data: { bookingId: id }
     });
@@ -519,12 +519,12 @@ exports.cancelBooking = async (req, res) => {
   const id = parseInt(req.params.id, 10);
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { houseOwner: true }
+    include: { parent: true }
   });
 
   if (!booking) throw new ApiError(404, "Booking not found");
-  if (booking.houseOwner.userId !== req.user.id) {
-    throw new ApiError(403, "Only the house owner can cancel");
+  if (booking.parent.userId !== req.user.id) {
+    throw new ApiError(403, "Only the parent can cancel");
   }
   if (!["PENDING", "CONFIRMED"].includes(booking.status)) {
     throw new ApiError(400, "Cannot cancel booking in current status");
@@ -545,9 +545,9 @@ exports.completeBooking = async (req, res) => {
 
   if (!booking) throw new ApiError(404, "Booking not found");
 
-  const isOwner = booking.houseOwner.userId === req.user.id;
-  const isServant = booking.servant.userId === req.user.id;
-  if (!isOwner && !isServant) throw new ApiError(403, "Access denied");
+  const isOwner = booking.parent.userId === req.user.id;
+  const isCaregiver = booking.caregiver.userId === req.user.id;
+  if (!isOwner && !isCaregiver) throw new ApiError(403, "Access denied");
 
   if (!["CONFIRMED", "ACTIVE"].includes(booking.status)) {
     throw new ApiError(400, "Booking cannot be completed");
@@ -560,7 +560,7 @@ exports.completeBooking = async (req, res) => {
   });
 
   await createNotification({
-    userId: booking.houseOwner.userId,
+    userId: booking.parent.userId,
     title: "Booking completed",
     body: "Your booking has been marked completed",
     type: "BOOKING_COMPLETED",
@@ -572,16 +572,16 @@ exports.completeBooking = async (req, res) => {
 
 exports.createReview = async (req, res) => {
   const id = parseInt(req.params.id, 10);
-  const { rating, comment } = req.body;
+  const { rating, comment, childSafetyRating } = req.body;
 
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { houseOwner: true, servant: true, review: true }
+    include: { parent: true, caregiver: true, review: true }
   });
 
   if (!booking) throw new ApiError(404, "Booking not found");
-  if (booking.houseOwner.userId !== req.user.id) {
-    throw new ApiError(403, "Only house owner can review");
+  if (booking.parent.userId !== req.user.id) {
+    throw new ApiError(403, "Only parent can review");
   }
   if (booking.status !== "COMPLETED") {
     throw new ApiError(400, "Can only review completed bookings");
@@ -590,16 +590,16 @@ exports.createReview = async (req, res) => {
 
   const review = await prisma.$transaction(async (tx) => {
     const r = await tx.review.create({
-      data: { bookingId: id, rating, comment }
+      data: { bookingId: id, rating, comment, childSafetyRating: childSafetyRating ?? null }
     });
 
-    const servant = booking.servant;
-    const newTotal = servant.totalRatings + 1;
+    const caregiver = booking.caregiver;
+    const newTotal = caregiver.totalRatings + 1;
     const newRating =
-      (servant.rating * servant.totalRatings + rating) / newTotal;
+      (caregiver.rating * caregiver.totalRatings + rating) / newTotal;
 
-    await tx.servant.update({
-      where: { id: servant.id },
+    await tx.caregiver.update({
+      where: { id: caregiver.id },
       data: { rating: newRating, totalRatings: newTotal }
     });
 
@@ -616,12 +616,12 @@ const trackingPayload = (booking) => ({
     latitude: booking.latitude,
     longitude: booking.longitude
   },
-  servant:
-    booking.servantLatitude != null && booking.servantLongitude != null
+  caregiver:
+    booking.caregiverLatitude != null && booking.caregiverLongitude != null
       ? {
-          latitude: booking.servantLatitude,
-          longitude: booking.servantLongitude,
-          updatedAt: booking.servantLocationAt
+          latitude: booking.caregiverLatitude,
+          longitude: booking.caregiverLongitude,
+          updatedAt: booking.caregiverLocationAt
         }
       : null
 });
@@ -631,8 +631,8 @@ exports.getBookingTracking = async (req, res) => {
   const booking = await prisma.booking.findUnique({
     where: { id },
     include: {
-      servant: { include: { user: { select: { id: true, name: true } } } },
-      houseOwner: { include: { user: { select: { id: true } } } }
+      caregiver: { include: { user: { select: { id: true, name: true } } } },
+      parent: { include: { user: { select: { id: true } } } }
     }
   });
 
@@ -649,35 +649,35 @@ exports.updateBookingTracking = async (req, res) => {
   const booking = await prisma.booking.findUnique({
     where: { id },
     include: {
-      servant: { include: { user: { select: { id: true, name: true } } } },
-      houseOwner: { include: { user: { select: { id: true } } } }
+      caregiver: { include: { user: { select: { id: true, name: true } } } },
+      parent: { include: { user: { select: { id: true } } } }
     }
   });
 
   if (!booking) throw new ApiError(404, "Booking not found");
-  if (booking.servant.userId !== req.user.id) {
-    throw new ApiError(403, "Only the assigned servant can share location");
+  if (booking.caregiver.userId !== req.user.id) {
+    throw new ApiError(403, "Only the assigned caregiver can share location");
   }
   if (!["CONFIRMED", "ACTIVE"].includes(booking.status)) {
     throw new ApiError(400, "Location sharing is only available for confirmed or active bookings");
   }
 
-  const firstShare = booking.servantLatitude == null || booking.servantLongitude == null;
+  const firstShare = booking.caregiverLatitude == null || booking.caregiverLongitude == null;
 
   const updated = await prisma.booking.update({
     where: { id },
     data: {
-      servantLatitude: latitude,
-      servantLongitude: longitude,
-      servantLocationAt: new Date()
+      caregiverLatitude: latitude,
+      caregiverLongitude: longitude,
+      caregiverLocationAt: new Date()
     }
   });
 
-  if (firstShare && booking.houseOwner?.user?.id) {
+  if (firstShare && booking.parent?.user?.id) {
     await createNotification({
-      userId: booking.houseOwner.user.id,
-      title: "Helper is on the way",
-      body: `${booking.servant?.user?.name || "Your helper"} started sharing live location — open your booking to track on the map`,
+      userId: booking.parent.user.id,
+      title: "Caregiver is on the way",
+      body: `${booking.caregiver?.user?.name || "Your caregiver"} started sharing live location — open your booking to track on the map`,
       type: "HELPER_ON_WAY",
       data: { bookingId: id }
     });
@@ -686,13 +686,13 @@ exports.updateBookingTracking = async (req, res) => {
   sendSuccess(res, trackingPayload(updated));
 };
 
-const getServantForUser = async (userId) => {
-  const servant = await prisma.servant.findUnique({
+const getCaregiverForUser = async (userId) => {
+  const caregiver = await prisma.caregiver.findUnique({
     where: { userId },
     include: { user: { select: { id: true, name: true } } }
   });
-  if (!servant) throw new ApiError(403, "Servant profile required");
-  return servant;
+  if (!caregiver) throw new ApiError(403, "Caregiver profile required");
+  return caregiver;
 };
 
 exports.markArrived = async (req, res) => {
@@ -704,13 +704,13 @@ exports.markArrived = async (req, res) => {
     throw new ApiError(400, "Booking must be confirmed before starting work");
   }
 
-  const servant = await getServantForUser(req.user.id);
-  if (booking.servantId !== servant.id) {
+  const caregiver = await getCaregiverForUser(req.user.id);
+  if (booking.caregiverId !== caregiver.id) {
     throw new ApiError(403, "Not your booking");
   }
 
   const openEntry = await prisma.timeEntry.findFirst({
-    where: { servantId: servant.id, clockOut: null }
+    where: { caregiverId: caregiver.id, clockOut: null }
   });
   if (openEntry) {
     throw new ApiError(400, "Already working on a job. Finish it first.");
@@ -718,19 +718,19 @@ exports.markArrived = async (req, res) => {
 
   const { expiresAt } = await issueWorkStartOtp({
     booking,
-    servantUser: servant.user,
-    ownerUserId: booking.houseOwner.userId
+    caregiverUser: caregiver.user,
+    ownerUserId: booking.parent.userId
   });
 
   const refreshed = await prisma.booking.findUnique({
     where: { id },
     include: bookingInclude
   });
-  const [enriched] = await attachWorkOtpFields([refreshed], "SERVANT");
+  const [enriched] = await attachWorkOtpFields([refreshed], "CAREGIVER");
 
   sendSuccess(res, {
     booking: enriched,
-    message: "OTP sent to home owner. Ask them for the 4-digit code.",
+    message: "Care-start OTP sent to parent. Ask them for the 4-digit code.",
     otpExpiresAt: expiresAt.toISOString()
   });
 };
@@ -749,13 +749,13 @@ exports.verifyWorkOtp = async (req, res) => {
     throw new ApiError(400, "Work OTP is only needed for confirmed bookings");
   }
 
-  const servant = await getServantForUser(req.user.id);
-  if (booking.servantId !== servant.id) {
+  const caregiver = await getCaregiverForUser(req.user.id);
+  if (booking.caregiverId !== caregiver.id) {
     throw new ApiError(403, "Not your booking");
   }
 
   const openEntry = await prisma.timeEntry.findFirst({
-    where: { servantId: servant.id, clockOut: null }
+    where: { caregiverId: caregiver.id, clockOut: null }
   });
   if (openEntry) {
     throw new ApiError(400, "Already clocked in");
@@ -773,7 +773,7 @@ exports.verifyWorkOtp = async (req, res) => {
     const e = await tx.timeEntry.create({
       data: {
         bookingId: id,
-        servantId: servant.id,
+        caregiverId: caregiver.id,
         clockIn: now,
         date: now
       }
@@ -787,11 +787,11 @@ exports.verifyWorkOtp = async (req, res) => {
     return e;
   });
 
-  if (booking.houseOwner?.userId) {
+  if (booking.parent?.userId) {
     await createNotification({
-      userId: booking.houseOwner.userId,
-      title: "Helper has arrived",
-      body: `${servant.user?.name || "Your helper"} started work at your location`,
+      userId: booking.parent.userId,
+      title: "Caregiver has arrived",
+      body: `${caregiver.user?.name || "Your caregiver"} started work at your location`,
       type: "BOOKING_ACTIVE",
       data: { bookingId: id }
     });
@@ -801,7 +801,7 @@ exports.verifyWorkOtp = async (req, res) => {
     where: { id },
     include: bookingInclude
   });
-  const [enriched] = await attachWorkOtpFields([refreshed], "SERVANT");
+  const [enriched] = await attachWorkOtpFields([refreshed], "CAREGIVER");
 
   sendSuccess(res, { booking: enriched, entry, message: "OTP verified. Work started." });
 };

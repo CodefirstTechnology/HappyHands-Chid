@@ -2,6 +2,7 @@ const crypto = require("crypto");
 const prisma = require("../config/prisma");
 const ApiError = require("../utils/ApiError");
 const { createNotification } = require("./notificationService");
+const { sendCareStartOtpSms } = require("./smsService");
 
 const OTP_TTL_MS = 5 * 60 * 1000;
 const MAX_ATTEMPTS = 3;
@@ -9,7 +10,7 @@ const MAX_ATTEMPTS = 3;
 const hashOtp = (otp, bookingId) =>
   crypto
     .createHash("sha256")
-    .update(`${otp}:${bookingId}:${process.env.JWT_SECRET || "staffera"}`)
+    .update(`${otp}:${bookingId}:${process.env.JWT_SECRET || "childcare"}`)
     .digest("hex");
 
 const generateOtpCode = () => String(Math.floor(1000 + Math.random() * 9000));
@@ -24,9 +25,10 @@ const getActiveOtp = async (bookingId) =>
     orderBy: { createdAt: "desc" }
   });
 
-const issueWorkStartOtp = async ({ booking, servantUser, ownerUserId }) => {
+const issueWorkStartOtp = async ({ booking, caregiverUser, ownerUserId }) => {
   const code = generateOtpCode();
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
+  const caregiverName = caregiverUser?.name || "your caregiver";
 
   await prisma.$transaction(async (tx) => {
     await tx.bookingWorkStartOtp.updateMany({
@@ -48,19 +50,31 @@ const issueWorkStartOtp = async ({ booking, servantUser, ownerUserId }) => {
   });
 
   if (ownerUserId) {
-    const helperName = servantUser?.name || "Your helper";
     await createNotification({
       userId: ownerUserId,
-      title: "Work start OTP",
-      body: `Share OTP ${code} with ${helperName} to start work`,
+      title: "Care-start OTP",
+      body: `Share care-start OTP ${code} with ${caregiverName} to begin care`,
       type: "WORK_START_OTP",
       data: {
         bookingId: booking.id,
         otp: code,
         expiresAt: expiresAt.toISOString(),
-        helperName
+        caregiverName
       }
     });
+
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { phone: true }
+    });
+    if (owner?.phone) {
+      await sendCareStartOtpSms({
+        phone: owner.phone,
+        otp: code,
+        caregiverName,
+        bookingId: booking.id
+      });
+    }
   }
 
   return { code, expiresAt };
@@ -69,16 +83,16 @@ const issueWorkStartOtp = async ({ booking, servantUser, ownerUserId }) => {
 const verifyWorkStartOtp = async ({ bookingId, otpInput }) => {
   const otp = String(otpInput || "").trim();
   if (!/^\d{4}$/.test(otp)) {
-    throw new ApiError(400, "Enter the 4-digit OTP from the home owner");
+    throw new ApiError(400, "Enter the 4-digit care-start OTP from the parent");
   }
 
   const record = await getActiveOtp(bookingId);
   if (!record) {
-    throw new ApiError(400, "OTP expired or not requested. Tap arrived to get a new OTP.");
+    throw new ApiError(400, "Care-start OTP expired or not requested. Tap arrived to get a new OTP.");
   }
 
   if (record.attempts >= MAX_ATTEMPTS) {
-    throw new ApiError(429, "Too many wrong attempts. Request a new OTP.");
+    throw new ApiError(429, "Too many wrong attempts. Request a new care-start OTP.");
   }
 
   const valid = hashOtp(otp, bookingId) === record.otpHash;
@@ -90,7 +104,7 @@ const verifyWorkStartOtp = async ({ bookingId, otpInput }) => {
     const left = MAX_ATTEMPTS - record.attempts - 1;
     throw new ApiError(
       400,
-      left > 0 ? `Incorrect OTP. ${left} attempt(s) left.` : "Incorrect OTP. Request a new code."
+      left > 0 ? `Incorrect care-start OTP. ${left} attempt(s) left.` : "Incorrect care-start OTP. Request a new code."
     );
   }
 
@@ -114,11 +128,11 @@ const attachWorkOtpFields = async (bookings, role) => {
   let activeOtps = [];
   try {
     activeOtps = await prisma.bookingWorkStartOtp.findMany({
-    where: {
-      bookingId: { in: ids },
-      verifiedAt: null,
-      expiresAt: { gt: new Date() }
-    },
+      where: {
+        bookingId: { in: ids },
+        verifiedAt: null,
+        expiresAt: { gt: new Date() }
+      },
       orderBy: { createdAt: "desc" }
     });
   } catch {
@@ -134,7 +148,7 @@ const attachWorkOtpFields = async (bookings, role) => {
     const row = otpByBooking.get(booking.id);
     if (!row) return { ...booking, pendingWorkOtp: false };
 
-    if (role === "HOUSE_OWNER") {
+    if (role === "PARENT") {
       return {
         ...booking,
         pendingWorkOtp: true,

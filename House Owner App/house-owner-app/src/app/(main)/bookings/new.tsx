@@ -26,7 +26,7 @@ import { formatDate, formatCurrency } from '@/lib/i18n/format';
 
 export default function NewBookingScreen() {
   const { t } = useTranslation();
-  const { servantId } = useLocalSearchParams<{ servantId: string }>();
+  const { caregiverId } = useLocalSearchParams<{ caregiverId: string }>();
   const user = useAuthStore((s) => s.user);
   const [bookingType, setBookingType] = useState<'SESSION' | 'MONTHLY'>('SESSION');
   const [sessionDate, setSessionDate] = useState(new Date());
@@ -49,7 +49,7 @@ export default function NewBookingScreen() {
   const [showDate, setShowDate] = useState(false);
 
   useEffect(() => {
-    const ho = user?.houseOwner;
+    const ho = user?.parent;
     if (ho?.latitude != null && ho?.longitude != null && ho.address) {
       setLocation({
         address: ho.address,
@@ -68,14 +68,14 @@ export default function NewBookingScreen() {
         area: ho.area || '',
       });
     }
-  }, [user?.houseOwner]);
+  }, [user?.parent]);
 
   const { data: servant } = useQuery({
-    queryKey: ['servant', servantId],
-    enabled: !!servantId,
+    queryKey: ['caregiver', servantId],
+    enabled: !!caregiverId,
     queryFn: async () => {
-      const res = await api.get(`/servants/${servantId}`);
-      return res.data.data.servant;
+      const res = await api.get(`/caregivers/${caregiverId}`);
+      return res.data.data.caregiver;
     },
   });
 
@@ -101,7 +101,7 @@ export default function NewBookingScreen() {
     setLoading(true);
     try {
       const payload: Record<string, unknown> = {
-        servantId: Number(servantId),
+        caregiverId: Number(caregiverId),
         bookingType,
         address: location.address,
         flatNo: addressUnit.flatNo.trim() || undefined,

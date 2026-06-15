@@ -1,7 +1,7 @@
 const prisma = require("../config/prisma");
 const ApiError = require("../utils/ApiError");
 
-/** Block new bookings when these already occupy the servant's schedule. */
+/** Block new bookings when these already occupy the caregiver's schedule. */
 const BLOCKING_STATUSES = ["PENDING", "CONFIRMED", "ACTIVE"];
 
 /** Map legacy DB statuses so list queries never crash the Prisma client. */
@@ -68,7 +68,7 @@ const dateRangesOverlap = (startA, endA, startB, endB) => {
   return aStart <= bEnd && aEnd >= bStart;
 };
 
-const checkSessionConflict = async (servantId, bookingData, excludeBookingId) => {
+const checkSessionConflict = async (caregiverId, bookingData, excludeBookingId) => {
   const sessionDate = new Date(bookingData.sessionDate);
   const dayStart = new Date(sessionDate);
   dayStart.setHours(0, 0, 0, 0);
@@ -77,7 +77,7 @@ const checkSessionConflict = async (servantId, bookingData, excludeBookingId) =>
 
   const existing = await prisma.booking.findMany({
     where: {
-      servantId,
+      caregiverId,
       bookingType: "SESSION",
       status: { in: BLOCKING_STATUSES },
       sessionDate: { gte: dayStart, lte: dayEnd },
@@ -96,10 +96,10 @@ const checkSessionConflict = async (servantId, bookingData, excludeBookingId) =>
   return false;
 };
 
-const checkMonthlyConflict = async (servantId, bookingData, excludeBookingId) => {
+const checkMonthlyConflict = async (caregiverId, bookingData, excludeBookingId) => {
   const existing = await prisma.booking.findMany({
     where: {
-      servantId,
+      caregiverId,
       bookingType: "MONTHLY",
       status: { in: BLOCKING_STATUSES },
       ...(excludeBookingId ? { id: { not: excludeBookingId } } : {})
@@ -127,11 +127,11 @@ const checkMonthlyConflict = async (servantId, bookingData, excludeBookingId) =>
   return false;
 };
 
-const checkOwnerPendingDuplicate = async (houseOwnerId, servantId, bookingData) => {
+const checkParentPendingDuplicate = async (parentId, caregiverId, bookingData) => {
   const pending = await prisma.booking.findMany({
     where: {
-      houseOwnerId,
-      servantId,
+      parentId,
+      caregiverId,
       status: "PENDING"
     }
   });
@@ -220,7 +220,7 @@ const expireStaleSessionBookings = async (whereExtra = {}) => {
     },
     include: {
       timeEntries: true,
-      servant: { select: { hourlyRate: true } }
+      caregiver: { select: { hourlyRate: true } }
     }
   });
 
@@ -230,7 +230,7 @@ const expireStaleSessionBookings = async (whereExtra = {}) => {
 
     const totalAmount =
       nextStatus === "COMPLETED"
-        ? computeBookingEarnings(booking, booking.servant?.hourlyRate)
+        ? computeBookingEarnings(booking, booking.caregiver?.hourlyRate)
         : booking.totalAmount;
 
     await prisma.booking.update({
@@ -244,49 +244,49 @@ const expireStaleSessionBookings = async (whereExtra = {}) => {
 };
 
 const checkBookingConflict = async (
-  servantId,
+  caregiverId,
   bookingData,
   excludeBookingId,
-  houseOwnerId
+  parentId
 ) => {
-  if (houseOwnerId) {
-    const ownPending = await checkOwnerPendingDuplicate(
-      houseOwnerId,
-      servantId,
+  if (parentId) {
+    const ownPending = await checkParentPendingDuplicate(
+      parentId,
+      caregiverId,
       bookingData
     );
     if (ownPending) {
       throw new ApiError(
         409,
-        "You already have a pending request for this helper at this time. Check My Bookings or pick a different slot."
+        "You already have a pending request for this caregiver at this time. Check My Bookings or pick a different slot."
       );
     }
   }
 
   if (bookingData.bookingType === "SESSION") {
     const conflict = await checkSessionConflict(
-      servantId,
+      caregiverId,
       bookingData,
       excludeBookingId
     );
     if (conflict) {
       throw new ApiError(
         409,
-        "This helper is not available for that visit time. Choose another date, time, or helper."
+        "This caregiver is not available for that visit time. Choose another date, time, or caregiver."
       );
     }
   }
 
   if (bookingData.bookingType === "MONTHLY") {
     const conflict = await checkMonthlyConflict(
-      servantId,
+      caregiverId,
       bookingData,
       excludeBookingId
     );
     if (conflict) {
       throw new ApiError(
         409,
-        "This helper already has a monthly booking in that period. Choose different dates or another helper."
+        "This caregiver already has a monthly booking in that period. Choose different dates or another caregiver."
       );
     }
   }

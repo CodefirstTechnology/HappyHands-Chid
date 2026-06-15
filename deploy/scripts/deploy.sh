@@ -11,12 +11,12 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
-echo "Building and starting StaffEra stack..."
+echo "Building and starting ChildCare stack..."
 docker compose --env-file "$ENV_FILE" up -d --build
 
 echo "Waiting for API health..."
 for i in {1..30}; do
-  API_PORT="$(grep -E '^STAFFERA_API_PORT=' "$ENV_FILE" | cut -d= -f2- || echo 15000)"
+  API_PORT="$(grep -E '^CHILDCARE_API_PORT=' "$ENV_FILE" | cut -d= -f2- || echo 15000)"
   if curl -fsS "http://127.0.0.1:${API_PORT}/health" >/dev/null 2>&1; then
     echo "API is healthy."
     break

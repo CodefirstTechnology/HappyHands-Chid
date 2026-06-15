@@ -76,7 +76,7 @@ exports.adminDeleteSkill = async (req, res) => {
   const existing = await prisma.skill.findUnique({ where: { id } });
   if (!existing) throw new ApiError(404, "Skill not found");
 
-  const inUse = await prisma.servantSkill.count({
+  const inUse = await prisma.caregiverSkill.count({
     where: { skillName: existing.code }
   });
 
@@ -87,7 +87,7 @@ exports.adminDeleteSkill = async (req, res) => {
     });
     return sendSuccess(res, {
       skill,
-      message: "Skill is in use by servants and was deactivated instead of deleted"
+      message: "Skill is in use by caregivers and was deactivated instead of deleted"
     });
   }
 

@@ -18,7 +18,7 @@ const {
   getRoleCode,
   serializeUser
 } = require("../services/roleService");
-const { notifyNearbyAgentsOfRegistration } = require("../services/agentRegistrationService");
+const { notifyNearbyCoordinatorsOfRegistration } = require("../services/coordinatorRegistrationService");
 
 const sanitizeUser = (user) => serializeUser(user);
 
@@ -46,8 +46,19 @@ const issueTokens = async (user) => {
   return { accessToken, refreshToken, refreshTokenStr };
 };
 
-exports.registerOwner = async (req, res) => {
-  const { name, password, address, city, latitude, longitude, preferredLanguage } = req.body;
+exports.registerParent = async (req, res) => {
+  const {
+    name,
+    password,
+    address,
+    city,
+    latitude,
+    longitude,
+    preferredLanguage,
+    numberOfChildren,
+    childrenAges,
+    specialRequirements
+  } = req.body;
   const email = normalizeEmail(req.body.email);
   const phone = normalizePhone(req.body.phone);
 
@@ -64,22 +75,25 @@ exports.registerOwner = async (req, res) => {
       email,
       phone,
       password: hashed,
-      roleId: ROLE_IDS.HOUSE_OWNER,
+      roleId: ROLE_IDS.PARENT,
       preferredLanguage: preferredLanguage || "en",
-      houseOwner: {
+      parent: {
         create: {
           address,
           city,
           latitude: latitude ?? undefined,
-          longitude: longitude ?? undefined
+          longitude: longitude ?? undefined,
+          numberOfChildren: numberOfChildren ?? undefined,
+          childrenAges: childrenAges ?? [],
+          specialRequirements: specialRequirements?.trim() || null
         }
       }
     },
-    include: { houseOwner: true, ...userWithRoleInclude }
+    include: { parent: true, ...userWithRoleInclude }
   });
 
   const tokens = await issueTokens(user);
-  logger.info("House owner registered", { userId: user.id });
+  logger.info("Parent registered", { userId: user.id });
 
   sendSuccess(
     res,
@@ -90,7 +104,7 @@ exports.registerOwner = async (req, res) => {
 
 const digitsOnlyPhone = (phone) => String(phone ?? "").replace(/\D/g, "") || null;
 
-exports.registerServant = async (req, res) => {
+exports.registerCaregiver = async (req, res) => {
   const { name, address, city, latitude, longitude, preferredLanguage, skills } = req.body;
   const email = normalizeEmail(req.body.email);
   const phone = digitsOnlyPhone(normalizePhone(req.body.phone));
@@ -107,7 +121,7 @@ exports.registerServant = async (req, res) => {
     throw new ApiError(400, "Location is required. Enable GPS or pick your area on the map.");
   }
 
-  const servantProfile = {
+  const caregiverProfile = {
     address: address.trim(),
     city: city?.trim() || null,
     latitude: lat,
@@ -121,13 +135,13 @@ exports.registerServant = async (req, res) => {
   const byEmail = email
     ? await prisma.user.findUnique({
         where: { email },
-        include: { servant: { include: { skills: true } }, ...userWithRoleInclude }
+        include: { caregiver: { include: { skills: true } }, ...userWithRoleInclude }
       })
     : null;
   const byPhone = phone
     ? await prisma.user.findFirst({
         where: { phone },
-        include: { servant: { include: { skills: true } }, ...userWithRoleInclude }
+        include: { caregiver: { include: { skills: true } }, ...userWithRoleInclude }
       })
     : null;
 
@@ -144,12 +158,12 @@ exports.registerServant = async (req, res) => {
     if (existing.isActive) {
       throw new ApiError(
         400,
-        getRoleCode(existing) === "SERVANT"
-          ? "This account is already active. Sign in with the email and password your agent shared."
+        getRoleCode(existing) === "CAREGIVER"
+          ? "This account is already active. Sign in with the email and password your coordinator shared."
           : "Email or phone is already registered on another account."
       );
     }
-    if (getRoleCode(existing) !== "SERVANT" || !existing.servant) {
+    if (getRoleCode(existing) !== "CAREGIVER" || !existing.caregiver) {
       throw new ApiError(400, "Email or phone is already registered on another account type.");
     }
 
@@ -162,41 +176,41 @@ exports.registerServant = async (req, res) => {
           preferredLanguage: preferredLanguage || existing.preferredLanguage || "en"
         }
       });
-      await tx.servantSkill.deleteMany({ where: { servantId: existing.servant.id } });
-      return tx.servant.update({
-        where: { id: existing.servant.id },
+      await tx.caregiverSkill.deleteMany({ where: { caregiverId: existing.caregiver.id } });
+      return tx.caregiver.update({
+        where: { id: existing.caregiver.id },
         data: {
-          ...servantProfile,
-          agentId: null,
+          ...caregiverProfile,
+          coordinatorId: null,
           skills: { create: skillCreates }
         },
         include: { skills: true }
       });
     });
 
-    const nearbyAgents = await notifyNearbyAgentsOfRegistration(updated, {
+    const nearbyCoordinators = await notifyNearbyCoordinatorsOfRegistration(updated, {
       name,
       city: city?.trim(),
       address: address.trim()
     });
 
-    logger.info("Servant registration updated", {
+    logger.info("Caregiver registration updated", {
       userId: existing.id,
-      servantId: updated.id,
-      nearbyAgents: nearbyAgents.length
+      caregiverId: updated.id,
+      nearbyCoordinators: nearbyCoordinators.length
     });
 
     const areaMessage =
-      nearbyAgents.length > 0
-        ? `Your request was sent to ${nearbyAgents.length} nearby agent(s).`
-        : "No agents cover your area yet. An admin will assign one soon.";
+      nearbyCoordinators.length > 0
+        ? `Your request was sent to ${nearbyCoordinators.length} nearby coordinator(s).`
+        : "No coordinators cover your area yet. An admin will assign one soon.";
 
     return sendSuccess(
       res,
       {
         message: `Application updated. ${areaMessage}`,
-        servantId: updated.id,
-        nearbyAgentCount: nearbyAgents.length
+        caregiverId: updated.id,
+        nearbyCoordinatorCount: nearbyCoordinators.length
       },
       200
     );
@@ -210,43 +224,43 @@ exports.registerServant = async (req, res) => {
       email,
       phone,
       password: placeholderPassword,
-      roleId: ROLE_IDS.SERVANT,
+      roleId: ROLE_IDS.CAREGIVER,
       isActive: false,
       preferredLanguage: preferredLanguage || "en",
-      servant: {
+      caregiver: {
         create: {
-          ...servantProfile,
-          agentId: null,
+          ...caregiverProfile,
+          coordinatorId: null,
           skills: { create: skillCreates }
         }
       }
     },
-    include: { servant: { include: { skills: true } }, ...userWithRoleInclude }
+    include: { caregiver: { include: { skills: true } }, ...userWithRoleInclude }
   });
 
-  const nearbyAgents = await notifyNearbyAgentsOfRegistration(user.servant, {
+  const nearbyCoordinators = await notifyNearbyCoordinatorsOfRegistration(user.caregiver, {
     name,
     city: city?.trim(),
     address: address.trim()
   });
 
-  logger.info("Servant registration application", {
+  logger.info("Caregiver registration application", {
     userId: user.id,
-    servantId: user.servant?.id,
-    nearbyAgents: nearbyAgents.length
+    caregiverId: user.caregiver?.id,
+    nearbyCoordinators: nearbyCoordinators.length
   });
 
   const areaMessage =
-    nearbyAgents.length > 0
-      ? `Your request was sent to ${nearbyAgents.length} nearby agent(s).`
-      : "No agents cover your area yet. An admin will assign one soon.";
+    nearbyCoordinators.length > 0
+      ? `Your request was sent to ${nearbyCoordinators.length} nearby coordinator(s).`
+      : "No coordinators cover your area yet. An admin will assign one soon.";
 
   sendSuccess(
     res,
     {
       message: `Application submitted. ${areaMessage}`,
-      servantId: user.servant?.id,
-      nearbyAgentCount: nearbyAgents.length
+      caregiverId: user.caregiver?.id,
+      nearbyCoordinatorCount: nearbyCoordinators.length
     },
     201
   );
@@ -262,7 +276,7 @@ exports.login = async (req, res) => {
 
   const user = await prisma.user.findUnique({
     where: { email },
-    include: { houseOwner: true, servant: true, agent: true, ...userWithRoleInclude }
+    include: { parent: true, caregiver: true, coordinator: true, ...userWithRoleInclude }
   });
 
   if (!user) {
@@ -270,10 +284,10 @@ exports.login = async (req, res) => {
   }
 
   if (!user.isActive) {
-    if (getRoleCode(user) === "SERVANT") {
+    if (getRoleCode(user) === "CAREGIVER") {
       throw new ApiError(
         403,
-        "Your application is under review. An agent will contact you with login details."
+        "Your application is under review. A coordinator will contact you with login details."
       );
     }
     throw new ApiError(401, "Invalid email or password");
@@ -282,8 +296,8 @@ exports.login = async (req, res) => {
   const valid = await bcrypt.compare(password, user.password);
   if (!valid) throw new ApiError(401, "Invalid email or password");
 
-  if (getRoleCode(user) === "SERVANT" && !user.servant) {
-    throw new ApiError(403, "Servant profile not found. Contact your agent.");
+  if (getRoleCode(user) === "CAREGIVER" && !user.caregiver) {
+    throw new ApiError(403, "Caregiver profile not found. Contact your coordinator.");
   }
 
   const tokens = await issueTokens(user);
@@ -338,9 +352,9 @@ exports.me = async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
     include: {
-      houseOwner: true,
-      servant: { include: { skills: true, zones: true } },
-      agent: true,
+      parent: true,
+      caregiver: { include: { skills: true, zones: true } },
+      coordinator: true,
       ...userWithRoleInclude
     }
   });
@@ -351,19 +365,19 @@ exports.me = async (req, res) => {
 };
 
 exports.updateLocation = async (req, res) => {
-  if (req.user.role !== "HOUSE_OWNER") {
-    throw new ApiError(403, "Only house owners can update home location");
+  if (req.user.role !== "PARENT") {
+    throw new ApiError(403, "Only parents can update home location");
   }
 
-  const houseOwner = await prisma.houseOwner.findUnique({
+  const parent = await prisma.parent.findUnique({
     where: { userId: req.user.id }
   });
-  if (!houseOwner) throw new ApiError(404, "House owner profile not found");
+  if (!parent) throw new ApiError(404, "Parent profile not found");
 
   const { address, flatNo, building, area, city, latitude, longitude } = req.body;
 
-  const updated = await prisma.houseOwner.update({
-    where: { id: houseOwner.id },
+  const updated = await prisma.parent.update({
+    where: { id: parent.id },
     data: {
       ...(address !== undefined && { address }),
       ...(flatNo !== undefined && { flatNo: flatNo || null }),
@@ -377,10 +391,10 @@ exports.updateLocation = async (req, res) => {
 
   const user = await prisma.user.findUnique({
     where: { id: req.user.id },
-    include: { houseOwner: true, servant: true, agent: true, ...userWithRoleInclude }
+    include: { parent: true, caregiver: true, coordinator: true, ...userWithRoleInclude }
   });
 
-  sendSuccess(res, { houseOwner: updated, user: sanitizeUser(user) });
+  sendSuccess(res, { parent: updated, user: sanitizeUser(user) });
 };
 
 exports.updatePreferences = async (req, res) => {
@@ -390,9 +404,9 @@ exports.updatePreferences = async (req, res) => {
     where: { id: req.user.id },
     data: { preferredLanguage },
     include: {
-      houseOwner: true,
-      servant: { include: { skills: true, zones: true } },
-      agent: true,
+      parent: true,
+      caregiver: { include: { skills: true, zones: true } },
+      coordinator: true,
       ...userWithRoleInclude
     }
   });

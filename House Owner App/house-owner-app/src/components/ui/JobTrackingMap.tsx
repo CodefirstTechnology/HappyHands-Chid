@@ -14,7 +14,7 @@ type Coord = { latitude: number; longitude: number };
 
 type Props = {
   home?: Coord | null;
-  servant?: Coord | null;
+  caregiver?: Coord | null;
   height?: number;
   lastUpdated?: string | null;
   visitAddress?: VisitAddressParts | null;

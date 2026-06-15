@@ -23,10 +23,15 @@ export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
 
   const { data: profile } = useQuery({
-    queryKey: ['servant-profile'],
+    queryKey: ['caregiver-profile'],
     queryFn: async () => {
-      const res = await api.get('/servants/me');
-      return res.data.data.servant as {
+      const res = await api.get('/caregivers/me');
+      return res.data.data.caregiver as {
+        ageRangesServed?: string[];
+        maxChildren?: number | null;
+        hasCprCert?: boolean;
+        hasFirstAidCert?: boolean;
+        childcareNote?: string | null;
         verificationStatus: string;
         bio?: string | null;
         rating?: number;
@@ -43,7 +48,7 @@ export default function ProfileScreen() {
 
   const zones: Zone[] = profile?.zones || [];
   const skills = profile?.skills || [];
-  const verification = profile?.verificationStatus || user?.servant?.verificationStatus || 'PENDING';
+  const verification = profile?.verificationStatus || user?.caregiver?.verificationStatus || 'PENDING';
   const verifyStyle = StatusColors[verification] || StatusColors.PENDING;
   const displayName = profile?.user?.name || user?.name || t('verification.verifiedHelper');
   const email = profile?.user?.email || user?.email;
@@ -164,9 +169,40 @@ export default function ProfileScreen() {
             <View style={styles.sectionIcon}>
               <MaterialIcons name="info-outline" size={20} color={Stitch.colors.secondary} />
             </View>
-            <Text style={styles.sectionTitle}>{t('servantProfile.aboutYou')}</Text>
+            <Text style={styles.sectionTitle}>{t('caregiverProfile.aboutYou')}</Text>
           </View>
           <Text style={styles.bio}>{profile.bio}</Text>
+        </GlassCard>
+      ) : null}
+
+      {(profile?.ageRangesServed?.length ||
+        profile?.maxChildren != null ||
+        profile?.hasCprCert ||
+        profile?.hasFirstAidCert ||
+        profile?.childcareNote) ? (
+        <GlassCard style={styles.sectionCard}>
+          <View style={styles.sectionHead}>
+            <View style={styles.sectionIcon}>
+              <MaterialIcons name="child-care" size={20} color={Stitch.colors.secondary} />
+            </View>
+            <Text style={styles.sectionTitle}>{t('caregiverProfile.childcareDetails')}</Text>
+          </View>
+          {profile?.ageRangesServed?.length ? (
+            <Text style={styles.bio}>
+              {t('caregiverProfile.ageRanges')}: {profile.ageRangesServed.join(', ')}
+            </Text>
+          ) : null}
+          {profile?.maxChildren != null ? (
+            <Text style={styles.bio}>{t('caregiverProfile.maxChildren')}: {profile.maxChildren}</Text>
+          ) : null}
+          <Text style={styles.bio}>
+            {profile?.hasCprCert ? `✓ ${t('caregiverProfile.cprCert')}` : ''}
+            {profile?.hasCprCert && profile?.hasFirstAidCert ? ' · ' : ''}
+            {profile?.hasFirstAidCert ? `✓ ${t('caregiverProfile.firstAidCert')}` : ''}
+          </Text>
+          {profile?.childcareNote ? (
+            <Text style={[styles.bio, { marginTop: 8 }]}>{profile.childcareNote}</Text>
+          ) : null}
         </GlassCard>
       ) : null}
 

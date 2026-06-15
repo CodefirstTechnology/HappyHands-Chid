@@ -17,9 +17,9 @@ const authenticate = async (req, res, next) => {
       where: { id: decoded.id },
       include: {
         ...userWithRoleInclude,
-        houseOwner: true,
-        servant: true,
-        agent: true
+        parent: true,
+        caregiver: true,
+        coordinator: true
       }
     });
 
@@ -33,9 +33,9 @@ const authenticate = async (req, res, next) => {
       role: getRoleCode(user),
       roleId: user.roleId,
       name: user.name,
-      houseOwner: user.houseOwner,
-      servant: user.servant,
-      agent: user.agent
+      parent: user.parent,
+      caregiver: user.caregiver,
+      coordinator: user.coordinator
     };
 
     next();

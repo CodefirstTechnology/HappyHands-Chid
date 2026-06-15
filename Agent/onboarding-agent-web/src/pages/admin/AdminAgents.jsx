@@ -115,7 +115,7 @@ function AgentEditPanel({ agent, form, setForm, error, saving, onClose, onSave }
             <StatusPill active={agent.user.isActive} />
             <RadiusPill km={agent.serviceRadiusKm} />
             <span className="rounded-full bg-surface-container px-2.5 py-1 text-xs font-medium text-on-surface-variant">
-              {agent._count?.servants ?? 0} servants
+              {agent._count?.caregivers ?? 0} servants
             </span>
           </div>
         </div>
@@ -244,7 +244,7 @@ function AgentRowCard({ agent, isSelected, onEdit, onToggle }) {
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-outline-variant/20 pt-4">
         <RadiusPill km={agent.serviceRadiusKm} />
         <span className="rounded-full bg-surface-container px-2.5 py-1 text-xs font-medium text-on-surface-variant">
-          👥 {agent._count?.servants ?? 0} servants
+          👥 {agent._count?.caregivers ?? 0} servants
         </span>
         <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
           ₹{(agent.annualRevenue ?? 0).toLocaleString('en-IN')} / yr
@@ -303,10 +303,10 @@ export default function AdminAgents() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-agents', search],
     queryFn: async () => {
-      const res = await api.get('/admin/agents', {
+      const res = await api.get('/admin/coordinators', {
         params: { search: search || undefined, limit: 100 },
       })
-      return res.data.data.agents
+      return res.data.data.coordinators
     },
   })
 
@@ -314,7 +314,7 @@ export default function AdminAgents() {
 
   const stats = useMemo(() => {
     const active = rows.filter((a) => a.user.isActive).length
-    const servants = rows.reduce((sum, a) => sum + (a._count?.servants ?? 0), 0)
+    const servants = rows.reduce((sum, a) => sum + (a._count?.caregivers ?? 0), 0)
     const revenue = rows.reduce((sum, a) => sum + (a.annualRevenue ?? 0), 0)
     return { total: rows.length, active, servants, revenue }
   }, [rows])
@@ -379,7 +379,7 @@ export default function AdminAgents() {
     }
     setEditSaving(true)
     try {
-      await api.patch(`/admin/agents/${editingAgent.id}`, {
+      await api.patch(`/admin/coordinators/${editingAgent.id}`, {
         agencyName: editForm.agencyName.trim() || undefined,
         address: editForm.location.address,
         city: editForm.location.city,
@@ -436,7 +436,7 @@ export default function AdminAgents() {
 
     setSaving(true)
     try {
-      const res = await api.post('/admin/agents', {
+      const res = await api.post('/admin/coordinators', {
         name: name.trim(),
         email: email.trim(),
         phone: phone.trim() || undefined,
@@ -729,7 +729,7 @@ export default function AdminAgents() {
                     <td className="px-4 py-4">
                       <RadiusPill km={a.serviceRadiusKm} />
                     </td>
-                    <td className="px-4 py-4 font-medium">{a._count?.servants ?? 0}</td>
+                    <td className="px-4 py-4 font-medium">{a._count?.caregivers ?? 0}</td>
                     <td className="px-4 py-4 font-semibold text-amber-700">
                       ₹{(a.annualRevenue ?? 0).toLocaleString('en-IN')}
                     </td>

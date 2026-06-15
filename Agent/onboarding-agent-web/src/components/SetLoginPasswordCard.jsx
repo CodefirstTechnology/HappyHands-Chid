@@ -4,7 +4,7 @@ import { Button } from './ui/Button'
 import { LoginPasswordFields } from './LoginPasswordFields'
 import { CredentialsBanner } from './CredentialsBanner'
 
-export function SetLoginPasswordCard({ servantId, email, passwordAlreadySet, onSaved }) {
+export function SetLoginPasswordCard({ caregiverId, email, passwordAlreadySet, onSaved }) {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [credentials, setCredentials] = useState(null)
@@ -17,7 +17,7 @@ export function SetLoginPasswordCard({ servantId, email, passwordAlreadySet, onS
     }
     setLoading(true)
     try {
-      const res = await api.patch(`/agent/servants/${servantId}/password`, {
+      const res = await api.patch(`/coordinator/caregivers/${caregiverId}/password`, {
         password: trimmed,
       })
       setCredentials(res.data?.data?.credentials || null)

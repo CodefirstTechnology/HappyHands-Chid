@@ -74,11 +74,11 @@ app.use(
 );
 
 app.use("/api/v1/auth", require("./routes/authRoutes"));
-app.use("/api/v1/servants", require("./routes/servantRoutes"));
+app.use("/api/v1/caregivers", require("./routes/caregiverRoutes"));
 app.use("/api/v1/skills", require("./routes/skillRoutes"));
 app.use("/api/v1/bookings", require("./routes/bookingRoutes"));
 app.use("/api/v1/time", require("./routes/timeRoutes"));
-app.use("/api/v1/agent", require("./routes/agentRoutes"));
+app.use("/api/v1/coordinator", require("./routes/coordinatorRoutes"));
 app.use("/api/v1/admin", require("./routes/adminRoutes"));
 app.use("/api/v1/notifications", require("./routes/notificationRoutes"));
 app.use("/api/v1/zones", require("./routes/zoneRoutes"));
@@ -86,16 +86,16 @@ app.use("/api/v1/geo", require("./routes/geoRoutes"));
 app.use("/api/v1/kyc", require("./routes/kycRoutes"));
 
 app.get("/", (req, res) => {
-  res.json({ success: true, message: "StaffEra API Running" });
+  res.json({ success: true, message: "ChildCare API Running" });
 });
 
 app.get("/health", async (req, res) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
-    res.status(200).json({ status: "ok", service: "staffera-api" });
+    res.status(200).json({ status: "ok", service: "childcare-api" });
   } catch (err) {
     logger.error("Health check failed", { message: err.message });
-    res.status(503).json({ status: "error", service: "staffera-api" });
+    res.status(503).json({ status: "error", service: "childcare-api" });
   }
 });
 

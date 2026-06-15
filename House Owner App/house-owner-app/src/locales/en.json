@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "StaffEra",
-    "appNamePro": "StaffEra Pro",
+    "appName": "ChildCare",
+    "appNamePro": "ChildCare",
     "loading": "Loading…",
     "saving": "Saving…",
     "save": "Save",
@@ -20,10 +20,10 @@
     "no": "No",
     "or": "or",
     "rupee": "₹",
-    "helper": "helper",
-    "helpers": "helpers",
-    "helper_one": "helper",
-    "helper_other": "helpers",
+    "helper": "caregiver",
+    "helpers": "caregivers",
+    "helper_one": "caregiver",
+    "helper_other": "caregivers",
     "openMaps": "Open in Google Maps",
     "yourArea": "Your area",
     "tapSetHome": "Tap to set your home location",
@@ -32,8 +32,8 @@
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
     "requested": "Requested {{date}}",
-    "oneVisit": "One visit",
-    "monthly": "Monthly",
+    "oneVisit": "Babysitting session",
+    "monthly": "Recurring childcare contract",
     "waitingHelper": "Waiting for helper…",
     "active": "Active",
     "recent": "Recent"
@@ -47,7 +47,7 @@
   },
   "tabs": {
     "home": "Home",
-    "browse": "Browse",
+    "browse": "Find Caregivers",
     "bookings": "Bookings",
     "profile": "Profile",
     "schedule": "Schedule",
@@ -56,7 +56,7 @@
     "notifications": "Alerts"
   },
   "auth": {
-    "trustedSubtitle": "Trusted home help for your family",
+    "trustedSubtitle": "Trusted childcare for your family",
     "trustLine": "Verified helpers · Secure payments · Support in English & Hindi",
     "safeData": "Your home details stay private and encrypted.",
     "email": "Email",
@@ -66,10 +66,10 @@
     "newAccount": "New here? Create your account",
     "loginFailed": "Login failed",
     "tryAgain": "Please try again",
-    "wrongRole": "This account is not a house owner. Use the Servant or Agent app.",
-    "wrongRoleServant": "This account is not a servant. Use the House Owner or Agent app.",
-    "joinTitle": "Join StaffEra",
-    "joinSubtitle": "Book verified help for your home",
+    "wrongRole": "This account is not a parent. Use the Caregiver or Coordinator app.",
+    "wrongRoleServant": "This account is not a caregiver. Use the Parent or Coordinator app.",
+    "joinTitle": "Join ChildCare",
+    "joinSubtitle": "Find trusted childcare near you",
     "fullName": "Full name",
     "phone": "Phone (+91)",
     "confirmPassword": "Confirm password",
@@ -80,9 +80,9 @@
     "searchPlaceholder": "Search your society, street, or area",
     "cityIfNoLocation": "City (if location not set)",
     "welcomeBack": "Welcome back",
-    "servantSubtitle": "Sign in with the email your agent registered. Earn with dignity — on your schedule.",
-    "noSelfSignup": "No self-signup. Your agent creates your account and verifies your ID.",
-    "invalidCredentials": "Invalid email or password. Use the email and password your agent set when onboarding you.",
+    "servantSubtitle": "Sign in with the email your coordinator registered. Earn with dignity — on your schedule.",
+    "noSelfSignup": "No self-signup. Your coordinator creates your account and verifies your ID.",
+    "invalidCredentials": "Invalid email or password. Use the email and password your coordinator set when onboarding you.",
     "networkLocalhost": "Cannot reach the server. On a real phone, set EXPO_PUBLIC_API_BASE_URL in .env to your PC IP (run ipconfig), then restart: npx expo start -c",
     "networkGeneric": "Cannot reach {{base}}\n\n• Backend running? (npm start in Backend)\n• Phone on same Wi‑Fi as PC (not mobile data)\n• Windows Firewall: allow Node/port 5000\n• Restart app after .env change: npx expo start -c"
   },
@@ -106,7 +106,7 @@
   "status": {
     "PENDING": "Pending",
     "CONFIRMED": "Confirmed",
-    "ACTIVE": "Active",
+    "ACTIVE": "Care in progress",
     "COMPLETED": "Completed",
     "CANCELLED": "Cancelled",
     "REJECTED": "Rejected",
@@ -122,7 +122,7 @@
     "rejected": "Verification rejected"
   },
   "home": {
-    "searchPlaceholder": "Request verified help — cooking, cleaning…",
+    "searchPlaceholder": "Find trusted childcare near you",
     "fastBooking": "Fast booking",
     "requestInArea": "Request help in your area",
     "helpersNearby_one": "{{count}} verified helper nearby — first to accept gets your job",
@@ -138,7 +138,7 @@
     "noBookingsYet": "No bookings yet — tap Send request now above"
   },
   "browse": {
-    "findHelp": "Find verified help",
+    "findHelp": "Find Caregivers",
     "helpersNearLive": "Helpers near your live location",
     "skillHelpers": "{{skill}} helpers",
     "skillNearYou_one": "{{count}} verified {{skill}} helper near you",
@@ -150,6 +150,10 @@
     "noSkillInArea": "No {{skill}} helpers nearby yet — your request will wait until one is available in your area.",
     "noHelpersInArea": "No verified helpers in your area yet — your request will wait until one is available nearby.",
     "filters": "Filters",
+    "ageRange": "Child age range",
+    "maxChildrenPlaceholder": "Min. children caregiver can watch",
+    "cprCertified": "CPR certified",
+    "firstAidCertified": "First aid certified",
     "skill": "Skill",
     "allSkills": "All skills",
     "city": "City",
@@ -201,11 +205,13 @@
     "visitAddress": "Visit address",
     "notes": "Notes",
     "assignedHelper": "Assigned helper",
-    "session": "Session",
-    "monthlyPlan": "Monthly plan",
+    "session": "Babysitting session",
+    "monthlyPlan": "Recurring childcare contract",
     "when": "When",
     "amount": "Amount",
-    "reviewTitle": "Rate your visit",
+    "reviewTitle": "Rate your care visit",
+    "overallRating": "Overall rating",
+    "childSafetyRating": "Child safety rating",
     "reviewPlaceholder": "Share how the visit went (optional)",
     "submitReview": "Submit review",
     "thankYou": "Thank you!",
@@ -344,7 +350,15 @@
   },
   "profile": {
     "title": "Profile",
-    "houseOwner": "House owner",
+    "parent": "Parent",
+    "houseOwner": "Parent",
+    "childrenInfo": "Children",
+    "childrenInfoSub": "Help caregivers understand your family's needs",
+    "numberOfChildren": "Number of children",
+    "childrenAges": "Children's ages",
+    "childrenAgesPlaceholder": "e.g. 2, 5, 8",
+    "specialRequirements": "Special requirements",
+    "specialRequirementsPlaceholder": "Allergies, routines, medical notes…",
     "homeLocation": "Home location",
     "homeLocationSub": "Search, tap the map, or use GPS — helpers see jobs near this address",
     "saveHomeLocation": "Save home location",
@@ -421,8 +435,8 @@
     "serviceZonesSub": "Customers near these areas see your open requests"
   },
   "workOtp": {
-    "homeKicker": "Work start code",
-    "homeTitle": "Share this OTP with your helper",
+    "homeKicker": "Care-start OTP",
+    "homeTitle": "Share this OTP with your caregiver",
     "homeHelper": "{{name}} is ready to start",
     "homeHint": "Tell them this 4-digit code so they can begin work. Expires in 5 minutes."
   },
@@ -445,15 +459,15 @@
       "body": "Your booking has been marked completed"
     },
     "CLOCK_IN": {
-      "title": "Helper has arrived",
-      "body": "Your helper clocked in at your home"
+      "title": "Arrived at home",
+      "body": "Your caregiver arrived at your home"
     },
-    "SERVANT_VERIFIED": {
+    "CAREGIVER_VERIFIED": {
       "title": "You are verified",
       "body": "Your profile is verified — you can accept jobs"
     },
     "WORK_START_OTP": {
-      "title": "Work start OTP",
+      "title": "Care-start OTP",
       "body": "Share this code with your helper",
       "bodyWithOtp": "OTP {{otp}} — share with {{name}} to start work"
     },

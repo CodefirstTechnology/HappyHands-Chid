@@ -111,7 +111,7 @@ export default function AdminBookings() {
                       Booking #{b.id}
                     </p>
                     <p className="mt-1 font-semibold text-primary">
-                      {b.houseOwner?.user?.name || 'Unknown owner'}
+                      {b.parent?.user?.name || 'Unknown owner'}
                     </p>
                   </div>
                   <Badge status={b.status} />
@@ -125,7 +125,7 @@ export default function AdminBookings() {
                 <p className="mt-3 text-sm text-on-surface-variant">
                   Helper:{' '}
                   <span className="font-medium text-on-background">
-                    {b.servant?.user?.name || 'Unassigned'}
+                    {b.caregiver?.user?.name || 'Unassigned'}
                   </span>
                 </p>
               </MobileCard>
@@ -142,17 +142,17 @@ export default function AdminBookings() {
                 </td>
                 <td className="px-4 py-4">
                   <div className="flex items-center gap-2">
-                    <Avatar name={b.houseOwner?.user?.name} variant="soft" />
+                    <Avatar name={b.parent?.user?.name} variant="soft" />
                     <span className="font-medium">
-                      {b.houseOwner?.user?.name || '—'}
+                      {b.parent?.user?.name || '—'}
                     </span>
                   </div>
                 </td>
                 <td className="px-4 py-4">
-                  {b.servant?.user?.name ? (
+                  {b.caregiver?.user?.name ? (
                     <div className="flex items-center gap-2">
-                      <Avatar name={b.servant.user.name} variant="soft" />
-                      <span>{b.servant.user.name}</span>
+                      <Avatar name={b.caregiver.user.name} variant="soft" />
+                      <span>{b.caregiver.user.name}</span>
                     </div>
                   ) : (
                     <span className="text-on-surface-variant">Unassigned</span>

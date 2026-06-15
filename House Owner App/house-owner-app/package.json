@@ -1,5 +1,5 @@
 {
-  "name": "house-owner-app",
+  "name": "childcare-parent-app",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {

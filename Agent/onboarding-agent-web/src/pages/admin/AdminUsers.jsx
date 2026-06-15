@@ -19,9 +19,9 @@ import {
 
 const ROLE_OPTIONS = [
   ['', 'All roles'],
-  ['HOUSE_OWNER', 'House owners'],
-  ['SERVANT', 'Servants'],
-  ['AGENT', 'Agents'],
+  ['PARENT', 'House owners'],
+  ['CAREGIVER', 'Servants'],
+  ['COORDINATOR', 'Agents'],
   ['ADMIN', 'Admins'],
 ]
 
@@ -32,9 +32,9 @@ function displayName(user) {
   return 'Unnamed user'
 }
 
-function houseOwnerMeta(user) {
-  if (user?.role !== 'HOUSE_OWNER') return null
-  const parts = [user.houseOwner?.city, user.houseOwner?.address].filter(Boolean)
+function parentMeta(user) {
+  if (user?.role !== 'PARENT') return null
+  const parts = [user.parent?.city, user.parent?.address].filter(Boolean)
   return parts.length ? parts.join(' · ') : null
 }
 
@@ -86,17 +86,17 @@ export default function AdminUsers() {
           <StatCard label="Total users" value={total} />
           <StatCard
             label="House owners"
-            value={stats?.totalOwners ?? '—'}
+            value={stats?.totalParents ?? '—'}
             accent="text-blue-600"
           />
           <StatCard
             label="Servants"
-            value={stats?.totalServants ?? '—'}
+            value={stats?.totalCaregivers ?? '—'}
             accent="text-violet-600"
           />
           <StatCard
             label="Field agents"
-            value={stats?.totalAgents ?? '—'}
+            value={stats?.totalCoordinators ?? '—'}
             accent="text-secondary"
           />
         </div>
@@ -118,7 +118,7 @@ export default function AdminUsers() {
           icon="👤"
           title="No users found"
           description={
-            role === 'HOUSE_OWNER'
+            role === 'PARENT'
               ? 'No house owner accounts match this filter.'
               : 'Try a different search or filter to find accounts.'
           }
@@ -137,8 +137,8 @@ export default function AdminUsers() {
                       {u.phone && (
                         <p className="text-xs text-on-surface-variant">{u.phone}</p>
                       )}
-                      {houseOwnerMeta(u) && (
-                        <p className="text-xs text-on-surface-variant">{houseOwnerMeta(u)}</p>
+                      {parentMeta(u) && (
+                        <p className="text-xs text-on-surface-variant">{parentMeta(u)}</p>
                       )}
                     </div>
                   </div>
@@ -166,8 +166,8 @@ export default function AdminUsers() {
                     <Avatar name={displayName(u)} />
                     <div>
                       <span className="font-semibold text-primary">{displayName(u)}</span>
-                      {houseOwnerMeta(u) && (
-                        <p className="text-xs text-on-surface-variant">{houseOwnerMeta(u)}</p>
+                      {parentMeta(u) && (
+                        <p className="text-xs text-on-surface-variant">{parentMeta(u)}</p>
                       )}
                     </div>
                   </div>

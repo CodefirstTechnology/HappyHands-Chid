@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Stitch } from '@/theme/stitch';
 import { GlassCard } from '@/components/ui/GlassCard';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { GhostInput } from '@/components/ui/GhostInput';
 import { LocationPicker } from '@/components/ui/LocationPicker';
 import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import {
@@ -35,9 +36,12 @@ export default function ProfileScreen() {
     area: '',
   });
   const [saving, setSaving] = useState(false);
+  const [numberOfChildren, setNumberOfChildren] = useState('');
+  const [childrenAges, setChildrenAges] = useState('');
+  const [specialRequirements, setSpecialRequirements] = useState('');
 
   useEffect(() => {
-    const ho = user?.houseOwner;
+    const ho = user?.parent;
     if (ho?.latitude != null && ho?.longitude != null && ho.address) {
       setLocation({
         address: ho.address,
@@ -55,8 +59,11 @@ export default function ProfileScreen() {
         building: ho.building || '',
         area: ho.area || '',
       });
+      setNumberOfChildren(ho.numberOfChildren != null ? String(ho.numberOfChildren) : '');
+      setChildrenAges(ho.childrenAges?.length ? ho.childrenAges.join(', ') : '');
+      setSpecialRequirements(ho.specialRequirements || '');
     }
-  }, [user?.houseOwner]);
+  }, [user?.parent]);
 
   const saveLocation = async () => {
     if (!location) {
@@ -65,6 +72,10 @@ export default function ProfileScreen() {
     }
     setSaving(true);
     try {
+      const ages = childrenAges
+        .split(',')
+        .map((s) => parseInt(s.trim(), 10))
+        .filter((n) => !Number.isNaN(n));
       const { user: updatedUser } = await updateHomeLocation({
         address: location.address,
         flatNo: addressUnit.flatNo.trim() || undefined,
@@ -73,6 +84,9 @@ export default function ProfileScreen() {
         city: location.city || undefined,
         latitude: location.latitude,
         longitude: location.longitude,
+        numberOfChildren: numberOfChildren ? Number(numberOfChildren) : undefined,
+        childrenAges: ages.length ? ages : undefined,
+        specialRequirements: specialRequirements.trim() || undefined,
       });
       setUser(updatedUser as typeof user);
       Alert.alert(t('success.saved'), t('success.homeLocationUpdated'));
@@ -97,7 +111,7 @@ export default function ProfileScreen() {
   };
 
   const initial = user?.name?.trim()?.[0]?.toUpperCase() || '?';
-  const displayCity = user?.houseOwner?.city || location?.city;
+  const displayCity = user?.parent?.city || location?.city;
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.scroll}>
@@ -118,10 +132,10 @@ export default function ProfileScreen() {
           </View>
         </View>
         <Text style={styles.heroName} numberOfLines={2}>
-          {user?.name || t('profile.houseOwner')}
+          {user?.name || t('profile.parent')}
         </Text>
         <View style={styles.rolePill}>
-          <Text style={styles.roleText}>{t('profile.houseOwner')}</Text>
+          <Text style={styles.roleText}>{t('profile.parent')}</Text>
         </View>
         <View style={styles.metaRow}>
           <MaterialIcons name="mail-outline" size={16} color="rgba(255,255,255,0.85)" />
@@ -139,6 +153,37 @@ export default function ProfileScreen() {
 
       <GlassCard style={styles.languageCard}>
         <LanguageSelector showTitle />
+      </GlassCard>
+
+      <GlassCard style={styles.locationCard}>
+        <View style={styles.sectionHead}>
+          <View style={styles.sectionIcon}>
+            <MaterialIcons name="family-restroom" size={22} color={Stitch.colors.secondary} />
+          </View>
+          <View style={styles.sectionHeadText}>
+            <Text style={styles.sectionTitle}>{t('profile.childrenInfo')}</Text>
+            <Text style={styles.sectionSub}>{t('profile.childrenInfoSub')}</Text>
+          </View>
+        </View>
+        <GhostInput
+          label={t('profile.numberOfChildren')}
+          value={numberOfChildren}
+          onChangeText={setNumberOfChildren}
+          keyboardType="number-pad"
+        />
+        <GhostInput
+          label={t('profile.childrenAges')}
+          value={childrenAges}
+          onChangeText={setChildrenAges}
+          placeholder={t('profile.childrenAgesPlaceholder')}
+        />
+        <GhostInput
+          label={t('profile.specialRequirements')}
+          value={specialRequirements}
+          onChangeText={setSpecialRequirements}
+          placeholder={t('profile.specialRequirementsPlaceholder')}
+          multiline
+        />
       </GlassCard>
 
       <GlassCard style={styles.locationCard}>

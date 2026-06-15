@@ -15,7 +15,7 @@ type ScheduleBooking = {
   bookingType: string;
   address?: string;
   sessionDate?: string | null;
-  houseOwner: { user: { name: string } };
+  parent: { user: { name: string } };
 };
 
 const SCHEDULE_STATUSES = new Set(['PENDING', 'CONFIRMED', 'ACTIVE']);
@@ -72,7 +72,7 @@ export default function ScheduleScreen() {
             <GlassCard style={styles.card}>
               <View style={styles.cardRow}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.name}>{b.houseOwner.user.name}</Text>
+                  <Text style={styles.name}>{b.parent.user.name}</Text>
                   <Text style={styles.meta}>
                     {b.bookingType === 'SESSION' ? t('common.oneVisit') : t('common.monthly')} ·{' '}
                     {b.address || t('schedule.addressTbd')}

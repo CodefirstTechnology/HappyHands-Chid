@@ -58,9 +58,9 @@ export default function ServantList() {
   }, [searchParams])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['agent-servants', status, search, category],
+    queryKey: ['coordinator-servants', status, search, category],
     queryFn: async () => {
-      const res = await api.get('/agent/servants', {
+      const res = await api.get('/coordinator/caregivers', {
         params: {
           status: status || undefined,
           search: search || undefined,
@@ -68,7 +68,7 @@ export default function ServantList() {
           limit: 100,
         },
       })
-      return res.data.data.servants
+      return res.data.data.caregivers
     },
   })
 
@@ -86,7 +86,7 @@ export default function ServantList() {
     <div className="space-y-6">
       <PageHeader
         eyebrow="Pipeline"
-        title="My servants"
+        title="My caregivers"
         description={
           <>
             Staff you onboarded and verified. App sign-ups live under{' '}
@@ -97,8 +97,8 @@ export default function ServantList() {
           </>
         }
         action={
-          <Link to="/servants/new">
-            <Button variant="gradient">+ Onboard servant</Button>
+          <Link to="/caregivers/new">
+            <Button variant="gradient">+ Onboard new caregiver</Button>
           </Link>
         }
       />
@@ -113,7 +113,7 @@ export default function ServantList() {
 
       <FilterBar
         count={servants.length}
-        countLabel={servants.length === 1 ? 'servant' : 'servants'}
+        countLabel={servants.length === 1 ? 'caregiver' : 'caregivers'}
       >
         <SelectFilter value={category} onChange={setCategory} options={CATEGORY_OPTIONS} />
         <SelectFilter value={status} onChange={setStatus} options={STATUS_OPTIONS} />
@@ -138,7 +138,7 @@ export default function ServantList() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <Link
-                        to={`/servants/${s.id}`}
+                        to={`/caregivers/${s.id}`}
                         className="font-semibold text-primary hover:text-secondary"
                       >
                         {s.user.name}
@@ -153,12 +153,12 @@ export default function ServantList() {
                   <SkillChips skills={s.skills} />
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Link to={`/servants/${s.id}`} className="flex-1">
+                  <Link to={`/caregivers/${s.id}`} className="flex-1">
                     <Button variant="gradient" className="w-full text-sm">
                       View
                     </Button>
                   </Link>
-                  <Link to={`/servants/${s.id}/edit`} className="flex-1">
+                  <Link to={`/caregivers/${s.id}/edit`} className="flex-1">
                     <Button variant="secondary" className="w-full text-sm">
                       Edit
                     </Button>
@@ -168,7 +168,7 @@ export default function ServantList() {
             ))}
           </div>
 
-          <DataTable columns={['Servant', 'Phone', 'Skills', 'Status', 'Actions']}>
+          <DataTable columns={['Caregiver', 'Phone', 'Skills', 'Status', 'Actions']}>
             {servants.map((s) => (
               <TableRow key={s.id}>
                 <td className="px-4 py-4">
@@ -177,7 +177,7 @@ export default function ServantList() {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <Link
-                          to={`/servants/${s.id}`}
+                          to={`/caregivers/${s.id}`}
                           className="font-semibold text-primary hover:text-secondary"
                         >
                           {s.user.name}
@@ -198,13 +198,13 @@ export default function ServantList() {
                 <td className="px-4 py-4">
                   <div className="flex gap-2">
                     <Link
-                      to={`/servants/${s.id}`}
+                      to={`/caregivers/${s.id}`}
                       className="rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/15"
                     >
                       View
                     </Link>
                     <Link
-                      to={`/servants/${s.id}/edit`}
+                      to={`/caregivers/${s.id}/edit`}
                       className="rounded-lg border border-outline-variant/40 px-3 py-1.5 text-xs font-medium text-on-surface-variant hover:bg-surface-low"
                     >
                       Edit

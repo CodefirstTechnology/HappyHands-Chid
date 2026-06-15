@@ -80,7 +80,7 @@ export default function VerifyAadhaarScreen() {
       });
 
       await qc.invalidateQueries({ queryKey: ['aadhaar-status'] });
-      await qc.invalidateQueries({ queryKey: ['servant-profile'] });
+      await qc.invalidateQueries({ queryKey: ['caregiver-profile'] });
       Alert.alert('Verified', 'Your Aadhaar has been verified successfully.');
       router.back();
     } catch (e: unknown) {

@@ -5,8 +5,8 @@ const { authenticate } = require("../middleware/auth");
 const validate = require("../middleware/validate");
 const asyncHandler = require("../utils/asyncHandler");
 const {
-  registerOwnerSchema,
-  registerServantSchema,
+  registerParentSchema,
+  registerCaregiverSchema,
   loginSchema,
   refreshSchema,
   forgotPasswordSchema,
@@ -16,14 +16,14 @@ const {
 } = require("../validators/authValidator");
 
 router.post(
-  "/register-owner",
-  validate(registerOwnerSchema),
-  asyncHandler(authController.registerOwner)
+  "/register-parent",
+  validate(registerParentSchema),
+  asyncHandler(authController.registerParent)
 );
 router.post(
-  "/register-servant",
-  validate(registerServantSchema),
-  asyncHandler(authController.registerServant)
+  "/register-caregiver",
+  validate(registerCaregiverSchema),
+  asyncHandler(authController.registerCaregiver)
 );
 router.post("/login", validate(loginSchema), asyncHandler(authController.login));
 router.post("/refresh", validate(refreshSchema), asyncHandler(authController.refresh));

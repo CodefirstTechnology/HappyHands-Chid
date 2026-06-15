@@ -23,6 +23,8 @@ import {
 
 const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
+const AGE_RANGES = ['0-2', '3-5', '6-12', '13+']
+
 const STEPS = [
   { id: 1, label: 'Personal' },
   { id: 2, label: 'Skills' },
@@ -113,6 +115,11 @@ export default function OnboardServant() {
     availabilityNotes: '',
     offersSession: true,
     offersMonthly: true,
+    ageRangesServed: [],
+    maxChildren: '',
+    hasCprCert: false,
+    hasFirstAidCert: false,
+    childcareNote: '',
     skills: [],
     address: '',
     idProofType: 'AADHAR',
@@ -130,6 +137,14 @@ export default function OnboardServant() {
       workingDays: f.workingDays.includes(d)
         ? f.workingDays.filter((x) => x !== d)
         : [...f.workingDays, d],
+    }))
+
+  const toggleAgeRange = (range) =>
+    setForm((f) => ({
+      ...f,
+      ageRangesServed: f.ageRangesServed.includes(range)
+        ? f.ageRangesServed.filter((x) => x !== range)
+        : [...f.ageRangesServed, range],
     }))
 
   const validatePersonal = () => {
@@ -251,7 +266,7 @@ export default function OnboardServant() {
 
     const fd = new FormData()
     Object.entries(form).forEach(([k, v]) => {
-      if (k === 'skills' || k === 'workingDays') {
+      if (k === 'skills' || k === 'workingDays' || k === 'ageRangesServed') {
         fd.append(k, JSON.stringify(v))
       } else if (typeof v === 'boolean') {
         fd.append(k, v ? 'true' : 'false')
@@ -264,10 +279,10 @@ export default function OnboardServant() {
 
     setSubmitting(true)
     try {
-      const res = await api.post('/agent/servants', fd, {
+      const res = await api.post('/coordinator/caregivers', fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      const servant = res.data.data.servant
+      const servant = res.data.data.caregiver
       if (draftZones.length) {
         await createDraftZonesForServant(servant.id, draftZones)
       }
@@ -275,7 +290,7 @@ export default function OnboardServant() {
         buildReportFromFormSubmitted(form, skills, { idProof, profilePhoto }, servant),
         `servant-${servant.id}`,
       )
-      navigate(`/servants/${servant.id}`)
+      navigate(`/caregivers/${servant.id}`)
     } catch (e) {
       setError(e.response?.data?.message || 'Failed to create servant')
     } finally {
@@ -286,7 +301,7 @@ export default function OnboardServant() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-2xl font-bold">Onboard New Servant</h2>
+        <h2 className="text-2xl font-bold">Onboard new caregiver</h2>
         <span className="text-sm text-subtext">
           Step {step} of {STEPS.length}
         </span>
@@ -356,7 +371,7 @@ export default function OnboardServant() {
           </Field>
           <Field label="Bio">
             <textarea
-              placeholder="Short description about the servant"
+              placeholder="Short description about the caregiver"
               value={form.bio}
               onChange={(e) => update('bio', e.target.value)}
               className={inputClassName()}
@@ -379,6 +394,61 @@ export default function OnboardServant() {
               value={form.monthlyRate}
               onChange={(e) => update('monthlyRate', e.target.value)}
               className={inputClassName()}
+            />
+          </Field>
+          <Field label="Age ranges served">
+            <div className="flex flex-wrap gap-2">
+              {AGE_RANGES.map((range) => (
+                <button
+                  key={range}
+                  type="button"
+                  onClick={() => toggleAgeRange(range)}
+                  className={`rounded-full px-3 py-1 text-sm ${
+                    form.ageRangesServed.includes(range)
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {range}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Max children">
+            <input
+              placeholder="e.g. 2"
+              type="number"
+              min="1"
+              value={form.maxChildren}
+              onChange={(e) => update('maxChildren', e.target.value)}
+              className={inputClassName()}
+            />
+          </Field>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.hasCprCert}
+                onChange={(e) => update('hasCprCert', e.target.checked)}
+              />
+              CPR certified
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={form.hasFirstAidCert}
+                onChange={(e) => update('hasFirstAidCert', e.target.checked)}
+              />
+              First aid certified
+            </label>
+          </div>
+          <Field label="Childcare notes">
+            <textarea
+              placeholder="Experience with infants, special needs, languages spoken…"
+              value={form.childcareNote}
+              onChange={(e) => update('childcareNote', e.target.value)}
+              className={inputClassName()}
+              rows={3}
             />
           </Field>
         </div>

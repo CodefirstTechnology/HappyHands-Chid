@@ -11,7 +11,7 @@ type User = {
   email: string;
   role: string;
   preferredLanguage?: string;
-  servant?: { id: number; verificationStatus: string };
+  caregiver?: { id: number; verificationStatus: string };
 };
 
 type AuthState = {
@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     const lat = Number(body.latitude);
     const lng = Number(body.longitude);
 
-    const res = await api.post('/auth/register-servant', {
+    const res = await api.post('/auth/register-caregiver', {
       name: String(body.name ?? '').trim(),
       email: String(body.email).trim().toLowerCase(),
       phone: String(body.phone ?? '').replace(/\D/g, ''),
@@ -74,7 +74,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       email: email.trim().toLowerCase(),
       password,
     });
-    if (data.data.user.role !== 'SERVANT') {
+    if (data.data.user.role !== 'CAREGIVER') {
       throw {
         response: {
           data: {

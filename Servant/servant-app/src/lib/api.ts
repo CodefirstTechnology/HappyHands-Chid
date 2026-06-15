@@ -17,8 +17,8 @@ function isAuthRoute(config?: InternalAxiosRequestConfig) {
   return (
     url.includes('/auth/login') ||
     url.includes('/auth/refresh') ||
-    url.includes('/auth/register-servant') ||
-    url.includes('/auth/register-owner') ||
+    url.includes('/auth/register-caregiver') ||
+    url.includes('/auth/register-parent') ||
     url.includes('/auth/register')
   );
 }

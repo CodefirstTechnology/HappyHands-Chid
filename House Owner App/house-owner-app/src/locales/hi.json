@@ -1,7 +1,7 @@
 {
   "common": {
-    "appName": "StaffEra",
-    "appNamePro": "StaffEra Pro",
+    "appName": "ChildCare",
+    "appNamePro": "ChildCare",
     "loading": "लोड हो रहा है…",
     "saving": "सेव हो रहा है…",
     "save": "सेव करें",
@@ -47,7 +47,7 @@
   },
   "tabs": {
     "home": "होम",
-    "browse": "खोजें",
+    "browse": "Find Caregivers",
     "bookings": "बुकिंग",
     "profile": "प्रोफ़ाइल",
     "schedule": "शेड्यूल",
@@ -67,7 +67,7 @@
     "loginFailed": "लॉगिन विफल",
     "tryAgain": "कृपया पुनः प्रयास करें",
     "wrongRole": "यह खाता house owner का नहीं है। Servant या Agent ऐप उपयोग करें।",
-    "joinTitle": "StaffEra में शामिल हों",
+    "joinTitle": "ChildCare में शामिल हों",
     "joinSubtitle": "अपने घर के लिए सत्यापित सहायता बुक करें",
     "fullName": "पूरा नाम",
     "phone": "फ़ोन (+91)",
@@ -321,7 +321,8 @@
   },
   "profile": {
     "title": "प्रोफ़ाइल",
-    "houseOwner": "घर मालिक",
+    "houseOwner": "Parent",
+    "parent": "Parent",
     "homeLocation": "घर का स्थान",
     "homeLocationSub": "खोजें, मैप टैप करें या GPS — सहायक को पास की नौकरियाँ दिखती हैं",
     "saveHomeLocation": "घर का स्थान सेव",
@@ -411,7 +412,7 @@
       "title": "सहायक पहुँचा",
       "body": "सहायक ने आपके घर क्लॉक इन किया"
     },
-    "SERVANT_VERIFIED": {
+    "CAREGIVER_VERIFIED": {
       "title": "आप सत्यापित हैं",
       "body": "प्रोफ़ाइल सत्यापित — नौकरियाँ स्वीकार कर सकते हैं"
     },
