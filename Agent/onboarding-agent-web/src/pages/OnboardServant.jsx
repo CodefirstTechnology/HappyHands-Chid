@@ -11,8 +11,10 @@ import {
   printOnboardingReport,
 } from '../lib/onboardingReport'
 import {
+  BankDetailsFields,
   BankDetailsReview,
   EMPTY_BANK_FORM,
+  validateBankDetails,
 } from '../components/BankDetailsFields'
 import {
   ServiceZonesEditor,
@@ -35,7 +37,7 @@ const STEPS = [
   { id: 3, label: 'Availability' },
   { id: 4, label: 'Service zones' },
   { id: 5, label: 'Documents' },
-  { id: 6, label: 'Bank (after Aadhaar)' },
+  { id: 6, label: 'Bank details' },
   { id: 7, label: 'Review & submit' },
 ]
 
@@ -131,6 +133,7 @@ export default function OnboardServant() {
   })
   const [profilePhoto, setProfilePhoto] = useState(null)
   const [idProof, setIdProof] = useState(null)
+  const [bankAccountConfirm, setBankAccountConfirm] = useState('')
   const [draftZones, setDraftZones] = useState([])
 
   const update = (key, val) => setForm((f) => ({ ...f, [key]: val }))
@@ -206,11 +209,21 @@ export default function OnboardServant() {
     return true
   }
 
+  const validateBank = () => {
+    const bankErr = validateBankDetails(form, bankAccountConfirm)
+    if (bankErr) {
+      setError(bankErr)
+      return false
+    }
+    return true
+  }
+
   const validateForReview = () => {
     if (!validatePersonal()) return false
     if (!validateAvailability()) return false
     if (!validateZones()) return false
     if (!validateDocuments()) return false
+    if (!validateBank()) return false
     return true
   }
 
@@ -242,10 +255,7 @@ export default function OnboardServant() {
         return
       }
     }
-    if (step === 6) {
-      setStep(7)
-      return
-    }
+    if (step === 6 && !validateBank()) return
     setStep((s) => s + 1)
   }
 
@@ -256,6 +266,7 @@ export default function OnboardServant() {
       else if (!validateAvailability()) setStep(3)
       else if (!validateZones()) setStep(4)
       else if (!validateDocuments()) setStep(5)
+      else if (!validateBank()) setStep(6)
       return
     }
 
@@ -607,13 +618,16 @@ export default function OnboardServant() {
         <div className="space-y-4 rounded-xl bg-surface p-6 shadow-sm">
           <h3 className="font-semibold">Bank details</h3>
           <p className="text-sm text-subtext">
-            Bank account is collected <strong>after Aadhaar verification</strong> on the caregiver
-            profile. The account holder name must match the name on Aadhaar.
+            Payment account for salary and booking payouts. You can add or update these later from
+            the servant profile.
           </p>
-          <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm text-primary">
-            After you submit onboarding: open the caregiver profile → verify Aadhaar → then add bank
-            details in Edit profile.
-          </div>
+          {error && <p className="text-error text-sm">{error}</p>}
+          <BankDetailsFields
+            form={form}
+            update={update}
+            accountNumberConfirm={bankAccountConfirm}
+            onAccountNumberConfirmChange={setBankAccountConfirm}
+          />
         </div>
       )}
 
