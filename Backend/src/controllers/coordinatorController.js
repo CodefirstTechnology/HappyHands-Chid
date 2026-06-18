@@ -16,7 +16,8 @@ const {
   coordinatorHasLocation,
   boundingBoxForRadius,
   getCoordinatorRadiusKm,
-  filterCaregiversNearCoordinator
+  filterCaregiversNearCoordinator,
+  findCoordinatorsNearLocation
 } = require("../services/locationService");
 const { assertCoordinatorCanAccessCaregiver } = require("../services/coordinatorRegistrationService");
 const { getCoordinatorAnnualRevenue } = require("../services/coordinatorRevenueService");
@@ -67,15 +68,33 @@ const resolveCoordinatorScope = async (user) => {
   return { isAdmin: false, coordinator, coordinatorId: coordinator.id };
 };
 
-/** Coordinator onboarded / assigned staff (not pending app sign-ups). */
+/** Coordinator pipeline: caregivers assigned to this coordinator (includes approved app sign-ups). */
 const caregiverWhereForScope = (scope, extra = {}) => {
   if (scope.isAdmin) return { ...extra };
   return {
     AND: [
-      { coordinatorId: scope.coordinatorId, registrationSource: "COORDINATOR" },
+      { coordinatorId: scope.coordinatorId },
       ...(Object.keys(extra).length ? [extra] : [])
     ]
   };
+};
+
+/** On approval, link app sign-ups to the coordinator who verified them. */
+const resolveApprovalCoordinatorId = async (scope, caregiver) => {
+  if (caregiver.coordinatorId != null) return caregiver.coordinatorId;
+  if (scope.coordinatorId) return scope.coordinatorId;
+  if (
+    scope.isAdmin &&
+    caregiver.latitude != null &&
+    caregiver.longitude != null
+  ) {
+    const nearby = await findCoordinatorsNearLocation(
+      caregiver.latitude,
+      caregiver.longitude
+    );
+    return nearby[0]?.id ?? null;
+  }
+  return null;
 };
 
 /** Pending sign-ups from the Caregiver app — separate from the caregivers pipeline. */
@@ -634,14 +653,22 @@ exports.verifyCaregiver = async (req, res) => {
     throw new ApiError(400, "Password must be at least 6 characters when setting login");
   }
 
+  const approvalCoordinatorId =
+    status === "VERIFIED"
+      ? await resolveApprovalCoordinatorId(scope, existing)
+      : null;
+
   const caregiver = await prisma.caregiver.update({
     where: { id },
     data: {
       verificationStatus: status,
       verifiedAt: status === "VERIFIED" ? new Date() : null,
       rejectionReason: status === "REJECTED" ? reason : null,
-      ...(status === "VERIFIED" && isAppRegistration && scope.coordinatorId
-        ? { coordinatorId: scope.coordinatorId, registrationSource: "COORDINATOR" }
+      ...(approvalCoordinatorId
+        ? {
+            coordinatorId: approvalCoordinatorId,
+            registrationSource: "COORDINATOR"
+          }
         : {})
     },
     include: caregiverInclude
