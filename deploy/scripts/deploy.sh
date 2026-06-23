@@ -11,6 +11,9 @@ if [[ ! -f "$ENV_FILE" ]]; then
   exit 1
 fi
 
+echo "Checking ports..."
+bash "$ROOT_DIR/deploy/scripts/check-ports.sh"
+
 echo "Building and starting BabyCare stack..."
 docker compose --env-file "$ENV_FILE" up -d --build
 

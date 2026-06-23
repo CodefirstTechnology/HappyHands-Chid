@@ -100,10 +100,11 @@ childcare/
 │   └── house-owner-app/        # Expo app for customers
 ├── Caregiver/
 │   └── servant-app/            # Expo app for staff
-├── Staffera_website/           # Marketing site (referenced in docker-compose)
+├── ChildCare_website/          # Marketing site (Docker)
 ├── deploy/
+│   ├── DEPLOY.md               # VPS deployment guide
 │   ├── nginx/childcare.conf     # Host nginx template
-│   └── scripts/deploy.sh       # One-command production deploy
+│   └── scripts/                # deploy, backup, check-ports, setup-nginx
 ├── docker-compose.yml          # Production stack
 ├── .env.production.example     # VPS environment template
 └── README.md                   # This file
@@ -442,7 +443,7 @@ The app polls for open booking requests and triggers vibration + notifications w
 
 ## Marketing website
 
-The production Docker stack includes a `Staffera_website` service (port `15001`) — a Vite marketing site with links to app stores and the agent portal. Add or clone the site into `Staffera_website/` before running `docker compose up` if that folder is not yet in your checkout.
+The production Docker stack includes a `ChildCare_website` service (port `15001`) — a Vite marketing site with links to app stores and the coordinator portal.
 
 Build args (from `.env.production.example`):
 
@@ -537,7 +538,9 @@ See `Backend/.env.example` for the full list.
 
 ## Production deployment
 
-BabyCare runs as **five Docker containers**: PostgreSQL, Redis, API, marketing website, and agent portal. Containers bind to **localhost only** so your VPS nginx reverse-proxies alongside other apps.
+See **[deploy/DEPLOY.md](deploy/DEPLOY.md)** for the full VPS guide (nginx + Docker alongside an existing app).
+
+BabyCare runs as **five Docker containers**: PostgreSQL, Redis, API, marketing website, and coordinator portal. Containers bind to **localhost only** so your VPS nginx reverse-proxies alongside other apps.
 
 ### 1. Prepare the VPS
 

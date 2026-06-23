@@ -120,6 +120,7 @@ Desktop.ini
 # =========================
 docker-compose.override.yml
 .docker/
+backups/
 
 
 # =========================
