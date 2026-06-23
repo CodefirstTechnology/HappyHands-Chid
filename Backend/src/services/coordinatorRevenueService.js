@@ -53,6 +53,51 @@ const buildCaregiverBreakdown = (bookings) => {
   return [...byCaregiver.values()].sort((a, b) => b.revenue - a.revenue);
 };
 
+const getPlatformAnnualRevenue = async (year = new Date().getFullYear()) => {
+  const bounds = getYearBounds(year);
+  const where = {
+    status: "COMPLETED",
+    updatedAt: { gte: bounds.start, lte: bounds.end }
+  };
+
+  const [bookings, caregiverCounts] = await Promise.all([
+    prisma.booking.findMany({
+      where,
+      select: {
+        id: true,
+        totalAmount: true,
+        updatedAt: true,
+        caregiverId: true,
+        caregiver: {
+          select: {
+            id: true,
+            user: { select: { name: true } }
+          }
+        }
+      },
+      orderBy: { updatedAt: "desc" }
+    }),
+    prisma.caregiver.groupBy({
+      by: ["verificationStatus"],
+      _count: true
+    })
+  ]);
+
+  const totalCaregivers = caregiverCounts.reduce((n, row) => n + row._count, 0);
+  const verifiedCaregivers =
+    caregiverCounts.find((row) => row.verificationStatus === "VERIFIED")?._count || 0;
+
+  return {
+    year: bounds.year,
+    annualRevenue: sumAmount(bookings),
+    annualCompletedBookings: bookings.length,
+    totalCaregivers,
+    verifiedCaregivers,
+    revenueByMonth: buildMonthlySeries(bookings, bounds.year),
+    caregiverRevenue: buildCaregiverBreakdown(bookings)
+  };
+};
+
 const getCoordinatorAnnualRevenue = async (coordinatorId, year = new Date().getFullYear()) => {
   const bounds = getYearBounds(year);
   const where = completedBookingsForCoordinatorYear(coordinatorId, bounds);
@@ -137,6 +182,7 @@ const attachAnnualRevenueToCoordinators = async (coordinators, year = new Date()
 
 module.exports = {
   getYearBounds,
+  getPlatformAnnualRevenue,
   getCoordinatorAnnualRevenue,
   attachAnnualRevenueToCoordinators
 };

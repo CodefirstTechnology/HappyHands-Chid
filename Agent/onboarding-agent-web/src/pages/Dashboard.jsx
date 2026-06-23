@@ -11,13 +11,17 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import api from '../lib/api'
+import { useAuth } from '../context/AuthContext'
 import { VerifiedBadge } from '../components/ui/VerifiedBadge'
 
 const formatRupee = (n) => `₹${Number(n || 0).toLocaleString('en-IN')}`
 
 export default function Dashboard() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
+
   const { data: revenue, isLoading: loadingRevenue } = useQuery({
-    queryKey: ['coordinator-stats'],
+    queryKey: ['coordinator-stats', user?.role],
     queryFn: async () => {
       const res = await api.get('/coordinator/stats')
       return res.data.data
@@ -70,7 +74,7 @@ export default function Dashboard() {
     { label: 'My caregivers', value: servants.length, accent: 'text-primary' },
     {
       label: 'Verified helpers',
-      value: loadingRevenue ? '…' : (revenue?.verifiedServants ?? verified.length),
+      value: loadingRevenue ? '…' : (revenue?.verifiedCaregivers ?? verified.length),
       accent: 'text-emerald-600',
     },
     { label: 'App registrations', value: appRegistrations.length, accent: 'text-violet-600' },
@@ -84,7 +88,9 @@ export default function Dashboard() {
       <div>
         <h2 className="text-2xl font-bold text-primary">Pipeline overview</h2>
         <p className="text-sm text-on-surface-variant mt-1">
-          Revenue from completed jobs by your verified helpers in {year}.
+          {isAdmin
+            ? `Platform-wide revenue from completed jobs in ${year}.`
+            : `Revenue from completed jobs by your verified helpers in ${year}.`}
         </p>
       </div>
 

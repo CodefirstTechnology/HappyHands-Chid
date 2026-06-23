@@ -20,7 +20,10 @@ const {
   findCoordinatorsNearLocation
 } = require("../services/locationService");
 const { assertCoordinatorCanAccessCaregiver } = require("../services/coordinatorRegistrationService");
-const { getCoordinatorAnnualRevenue } = require("../services/coordinatorRevenueService");
+const {
+  getCoordinatorAnnualRevenue,
+  getPlatformAnnualRevenue
+} = require("../services/coordinatorRevenueService");
 
 const parseSkills = (skills) => {
   if (!skills) return [];
@@ -727,12 +730,10 @@ exports.uploadIdProof = async (req, res) => {
 
 exports.getStats = async (req, res) => {
   const scope = await resolveCoordinatorScope(req.user);
-  if (scope.isAdmin) {
-    throw new ApiError(403, "Sign in as a field coordinator to view agency revenue");
-  }
-
   const year = req.query.year ? parseInt(req.query.year, 10) : new Date().getFullYear();
-  const stats = await getCoordinatorAnnualRevenue(scope.coordinatorId, year);
+  const stats = scope.isAdmin
+    ? await getPlatformAnnualRevenue(year)
+    : await getCoordinatorAnnualRevenue(scope.coordinatorId, year);
   sendSuccess(res, stats);
 };
 
