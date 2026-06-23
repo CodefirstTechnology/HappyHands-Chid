@@ -36,6 +36,7 @@ export default function LoginScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <LanguageSelector compact showTitle />
         <Text style={styles.badge}>{t('common.appNamePro')}</Text>
+        <Text style={styles.brandSubtitle}>{t('common.appSubtitle')}</Text>
         <Text style={styles.logo}>{t('auth.welcomeBack')}</Text>
         <Text style={styles.subtitle}>{t('auth.servantLoginSubtitle')}</Text>
 
@@ -100,6 +101,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     fontSize: 12,
     fontWeight: '700',
+    marginBottom: 4,
+  },
+  brandSubtitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Stitch.colors.secondary,
     marginBottom: 12,
   },
   logo: { fontSize: 32, fontWeight: '700', color: Stitch.colors.primary },

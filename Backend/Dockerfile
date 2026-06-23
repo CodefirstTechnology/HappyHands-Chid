@@ -1,4 +1,4 @@
-# ChildCare API — production Docker image
+# BabyCare API — production Docker image
 
 FROM node:20-alpine AS deps
 WORKDIR /app

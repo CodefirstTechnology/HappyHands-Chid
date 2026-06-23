@@ -2,6 +2,7 @@
   "common": {
     "appName": "BabyCare",
     "appNamePro": "BabyCare",
+    "appTagline": "Trusted baby care at home",
     "loading": "Loading…",
     "saving": "Saving…",
     "save": "Save",

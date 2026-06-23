@@ -11,7 +11,7 @@ const templates = {
     `Your childcare booking with ${caregiverName || "your caregiver"} is confirmed for ${dateTime || "the scheduled time"}. They will arrive at your home.`,
 
   newBookingAlert: () =>
-    "New childcare request near you! Open the ChildCare app to accept."
+    "New baby care request near you! Open BabyCare Pro to accept."
 };
 
 const normalizePhone = (phone) => {

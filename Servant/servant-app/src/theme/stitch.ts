@@ -1,5 +1,5 @@
 /**
- * ChildCare Stitch design tokens
+ * BabyCare Stitch design tokens
  */
 export const Stitch = {
   colors: {

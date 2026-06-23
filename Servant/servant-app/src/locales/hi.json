@@ -1,7 +1,8 @@
 {
   "common": {
     "appName": "BabyCare",
-    "appNamePro": "ChildCare Pro",
+    "appNamePro": "BabyCare Pro",
+    "appSubtitle": "नानियों और देखभालकर्ताओं के लिए",
     "loading": "लोड हो रहा है…",
     "saving": "सेव हो रहा है…",
     "save": "सेव करें",
@@ -67,7 +68,7 @@
     "loginFailed": "लॉगिन विफल",
     "tryAgain": "कृपया पुनः प्रयास करें",
     "wrongRole": "यह खाता house owner का नहीं है। Servant या Agent ऐप उपयोग करें।",
-    "joinTitle": "ChildCare में शामिल हों",
+    "joinTitle": "BabyCare Pro में शामिल हों",
     "joinSubtitle": "अपने घर के लिए सत्यापित सहायता बुक करें",
     "fullName": "पूरा नाम",
     "phone": "फ़ोन (+91)",
@@ -81,11 +82,11 @@
     "welcomeBack": "वापसी पर स्वागत",
     "servantSubtitle": "एजेंट द्वारा पंजीकृत ईमेल से साइन इन करें। सम्मान से कमाएं — अपने समय पर।",
     "servantLoginSubtitle": "साइन इन करें या सहायक खाता बनाएं। सम्मान से कमाएं — अपने समय पर।",
-    "servantJoinTitle": "सहायक के रूप में जुड़ें",
+    "servantJoinTitle": "BabyCare Pro में शामिल हों",
     "servantJoinSubtitle": "सहायक के रूप में आवेदन के लिए विवरण भेजें।",
     "register": "पंजीकरण करें",
-    "registrationAgentContact": "एजेंट जल्द संपर्क करेगा। सत्यापन के बाद पासवर्ड मिलेगा — फिर नीचे साइन इन करें।",
-    "registrationSuccessBody": "आपका आवेदन जमा हो गया। ChildCare एजेंट संपर्क करेगा, विवरण सत्यापित करेगा और लॉगिन विवरण देगा।",
+    "registrationAgentContact": "BabyCare समन्वयक जल्द संपर्क करेगा। सत्यापन के बाद पासवर्ड मिलेगा — फिर नीचे साइन इन करें।",
+    "registrationSuccessBody": "आपका आवेदन जमा हो गया। BabyCare समन्वयक संपर्क करेगा, विवरण सत्यापित करेगा और लॉगिन विवरण देगा।",
     "registrationEmailNote": "आपका ईमेल सहेजा गया: {{email}}",
     "goToSignIn": "साइन इन पर जाएं",
     "addressManual": "पता (लिखें या संपादित करें)",
@@ -349,13 +350,21 @@
     "screenTitle": "सेवा क्षेत्र",
     "screenSub": "जहाँ आप काम के लिए उपलब्ध हैं वे इलाके जोड़ें। घर मालिक ज़ोन से आपको खोज सकते हैं।"
   },
-  "servantProfile": {
+  "caregiverHome": {
+    "todaySchedule": "आज की देखभाल अनुसूची"
+  },
+  "caregiverProfile": {
+    "childcareDetails": "शिशु देखभाल विवरण",
+    "ageRanges": "सेवा की गई उम्र सीमा",
+    "maxChildren": "एक साथ अधिकतम शिशु",
+    "cprCert": "CPR प्रमाणित",
+    "firstAidCert": "प्राथमिक उपचार प्रमाणित",
     "rating": "रेटिंग",
     "perHour": "प्रति घंटा",
     "experience": "अनुभव",
     "yourSkills": "आपके कौशल",
     "aboutYou": "आपके बारे में",
-    "serviceZonesSub": "एजेंट द्वारा सेट — इन इलाकों के पास ग्राहक आपके अनुरोध देखते हैं"
+    "serviceZonesSub": "आपके समन्वयक द्वारा सेट — इन इलाकों के पास माता-पिता आपके अनुरोध देखते हैं"
   },
   "workOtp": {
     "requestOtp": "पहुँचा — OTP लें",

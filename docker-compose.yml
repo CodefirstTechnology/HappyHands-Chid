@@ -1,4 +1,4 @@
-# ChildCare production stack — bind ports to localhost for host nginx reverse proxy.
+# BabyCare production stack — bind ports to localhost for host nginx reverse proxy.
 # Usage:
 #   cp .env.production.example .env
 #   docker compose --env-file .env up -d --build

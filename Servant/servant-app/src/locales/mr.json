@@ -1,7 +1,8 @@
 {
   "common": {
     "appName": "BabyCare",
-    "appNamePro": "ChildCare Pro",
+    "appNamePro": "BabyCare Pro",
+    "appSubtitle": "नानी आणि काळजीवरांसाठी",
     "loading": "लोड होत आहे…",
     "saving": "सेव्ह होत आहे…",
     "save": "सेव्ह करा",
@@ -67,7 +68,7 @@
     "loginFailed": "लॉगिन अयशस्वी",
     "tryAgain": "कृपया पुन्हा प्रयत्न करा",
     "wrongRole": "हे house owner खाते नाही. Servant किंवा Agent अॅप वापरा.",
-    "joinTitle": "ChildCare मध्ये सामील व्हा",
+    "joinTitle": "BabyCare Pro मध्ये सामील व्हा",
     "joinSubtitle": "घरासाठी सत्यापित मदत बुक करा",
     "fullName": "पूर्ण नाव",
     "phone": "फोन (+91)",
@@ -81,11 +82,11 @@
     "welcomeBack": "पुन्हा स्वागत",
     "servantSubtitle": "एजंटने नोंदणी केलेल्या ईमेलने साइन इन करा. सन्मानाने कमवा — तुमच्या वेळेनुसार.",
     "servantLoginSubtitle": "साइन इन करा किंवा सहाय्यक खाते तयार करा. सन्मानाने कमवा — तुमच्या वेळेनुसार.",
-    "servantJoinTitle": "सहाय्यक म्हणून सामील व्हा",
+    "servantJoinTitle": "BabyCare Pro मध्ये सामील व्हा",
     "servantJoinSubtitle": "सहाय्यक म्हणून अर्ज करण्यासाठी माहिती पाठवा.",
     "register": "नोंदणी करा",
-    "registrationAgentContact": "एजंट लवकर संपर्क साधेल. तपासणीनंतर पासवर्ड मिळेल — मग खाली साइन इन करा.",
-    "registrationSuccessBody": "तुमचा अर्ज सादर झाला. ChildCare एजंट संपर्क साधेल, तपशील तपासेल आणि लॉगिन माहिती देईल.",
+    "registrationAgentContact": "BabyCare समन्वयक लवकर संपर्क साधेल. तपासणीनंतर पासवर्ड मिळेल — मग खाली साइन इन करा.",
+    "registrationSuccessBody": "तुमचा अर्ज सादर झाला. BabyCare समन्वयक संपर्क साधेल, तपशील तपासेल आणि लॉगिन माहिती देईल.",
     "registrationEmailNote": "तुमचा ईमेल जतन केला: {{email}}",
     "goToSignIn": "साइन इन वर जा",
     "addressManual": "पत्ता (टाइप किंवा संपादन)",
@@ -349,13 +350,21 @@
     "screenTitle": "सेवा क्षेत्रे",
     "screenSub": "जेथे तुम्ही कामासाठी उपलब्ध आहात ते परिसर जोडा. घर मालक झोनद्वारे तुम्हाला शोधू शकतात."
   },
-  "servantProfile": {
+  "caregiverHome": {
+    "todaySchedule": "आजचे काळजी वेळापत्रक"
+  },
+  "caregiverProfile": {
+    "childcareDetails": "बाळ काळजी तपशील",
+    "ageRanges": "सेवा केलेल्या वयाची श्रेणी",
+    "maxChildren": "एकाच वेळी जास्तीत जास्त बाळे",
+    "cprCert": "CPR प्रमाणित",
+    "firstAidCert": "प्राथमिक उपचार प्रमाणित",
     "rating": "रेटिंग",
     "perHour": "प्रति तास",
     "experience": "अनुभव",
     "yourSkills": "तुमची कौशल्ये",
     "aboutYou": "तुमच्याबद्दल",
-    "serviceZonesSub": "एजंटने सेट केले — या परिसरातील ग्राहक तुमच्या विनंत्या पाहतात"
+    "serviceZonesSub": "तुमच्या समन्वयकाने सेट केले — या परिसरातील पालक तुमच्या विनंत्या पाहतात"
   },
   "workOtp": {
     "requestOtp": "पोहोचलो — OTP मिळवा",

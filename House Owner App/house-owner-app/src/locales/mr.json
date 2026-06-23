@@ -1,7 +1,8 @@
 {
   "common": {
     "appName": "BabyCare",
-    "appNamePro": "ChildCare",
+    "appNamePro": "BabyCare",
+    "appTagline": "घरी विश्वासार्ह बाळ काळजी",
     "loading": "लोड होत आहे…",
     "saving": "सेव्ह होत आहे…",
     "save": "सेव्ह करा",
@@ -67,7 +68,7 @@
     "loginFailed": "लॉगिन अयशस्वी",
     "tryAgain": "कृपया पुन्हा प्रयत्न करा",
     "wrongRole": "हे house owner खाते नाही. Servant किंवा Agent अॅप वापरा.",
-    "joinTitle": "ChildCare मध्ये सामील व्हा",
+    "joinTitle": "BabyCare मध्ये सामील व्हा",
     "joinSubtitle": "घरासाठी सत्यापित मदत बुक करा",
     "fullName": "पूर्ण नाव",
     "phone": "फोन (+91)",

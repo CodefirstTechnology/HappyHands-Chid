@@ -101,7 +101,7 @@ app.use("/api/v1/geo", require("./routes/geoRoutes"));
 app.use("/api/v1/kyc", require("./routes/kycRoutes"));
 
 app.get("/", (req, res) => {
-  res.json({ success: true, message: "ChildCare API Running" });
+  res.json({ success: true, message: "BabyCare API Running" });
 });
 
 app.get("/health", async (req, res) => {

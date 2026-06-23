@@ -52,7 +52,7 @@ export default function Login() {
 
       <div className="glass-card w-full max-w-md p-10 z-10">
         <p className="text-sm font-semibold text-secondary mb-1">Coordinator & Admin Portal</p>
-        <h1 className="text-3xl font-bold text-primary tracking-tight mb-2">ChildCare</h1>
+        <h1 className="text-3xl font-bold text-primary tracking-tight mb-2">BabyCare</h1>
         <p className="text-on-surface-variant text-sm mb-8">
           Onboard and verify caregivers. Trusted by families across India.
         </p>

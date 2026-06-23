@@ -35,7 +35,7 @@ export default ({ config }) => ({
       'expo-location',
       {
         locationWhenInUsePermission:
-          'ChildCare uses your location to set your home address and find nearby caregivers.',
+          'BabyCare uses your location to set your home address and find nearby nannies.',
       },
     ],
   ],

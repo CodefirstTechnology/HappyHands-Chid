@@ -94,6 +94,7 @@ export default function ProfileScreen() {
           {displayName}
         </Text>
         <Text style={styles.heroBrand}>{t('common.appNamePro')}</Text>
+        <Text style={styles.heroSubtitle}>{t('common.appSubtitle')}</Text>
 
         {verification === 'VERIFIED' ? (
           <VerifiedBadge size="md" />
@@ -130,7 +131,7 @@ export default function ProfileScreen() {
               <View style={styles.stat}>
                 <MaterialIcons name="star" size={20} color={Stitch.colors.secondary} />
                 <Text style={styles.statValue}>{profile.rating.toFixed(1)}</Text>
-                <Text style={styles.statLabel}>{t('servantProfile.rating')}</Text>
+                <Text style={styles.statLabel}>{t('caregiverProfile.rating')}</Text>
               </View>
             ) : null}
             {profile?.hourlyRate != null ? (
@@ -140,14 +141,14 @@ export default function ProfileScreen() {
                   {t('common.rupee')}
                   {formatCurrency(profile.hourlyRate)}
                 </Text>
-                <Text style={styles.statLabel}>{t('servantProfile.perHour')}</Text>
+                <Text style={styles.statLabel}>{t('caregiverProfile.perHour')}</Text>
               </View>
             ) : null}
             {profile?.experience != null ? (
               <View style={styles.stat}>
                 <MaterialIcons name="work-outline" size={20} color={Stitch.colors.secondary} />
                 <Text style={styles.statValue}>{profile.experience}y</Text>
-                <Text style={styles.statLabel}>{t('servantProfile.experience')}</Text>
+                <Text style={styles.statLabel}>{t('caregiverProfile.experience')}</Text>
               </View>
             ) : null}
           </View>
@@ -160,7 +161,7 @@ export default function ProfileScreen() {
             <View style={styles.sectionIcon}>
               <MaterialIcons name="handyman" size={20} color={Stitch.colors.secondary} />
             </View>
-            <Text style={styles.sectionTitle}>{t('servantProfile.yourSkills')}</Text>
+            <Text style={styles.sectionTitle}>{t('caregiverProfile.yourSkills')}</Text>
           </View>
           <View style={styles.skillChips}>
             {skills.map((s) => (
@@ -226,7 +227,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.sectionHeadText}>
             <Text style={styles.sectionTitle}>{t('zones.title')}</Text>
-            <Text style={styles.sectionSub}>{t('servantProfile.serviceZonesSub')}</Text>
+            <Text style={styles.sectionSub}>{t('caregiverProfile.serviceZonesSub')}</Text>
           </View>
         </View>
 
@@ -324,6 +325,12 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.75)',
     marginTop: 4,
     letterSpacing: 0.5,
+  },
+  heroSubtitle: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: 'rgba(255,255,255,0.65)',
+    marginTop: 2,
   },
   verifyPill: {
     marginTop: 12,

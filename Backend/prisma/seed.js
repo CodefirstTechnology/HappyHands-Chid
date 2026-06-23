@@ -24,7 +24,7 @@ async function main() {
       password,
       roleId: ROLE_IDS.ADMIN,
       coordinator: {
-        create: { agencyName: "ChildCare Admin", city: "Mumbai" }
+        create: { agencyName: "BabyCare Admin", city: "Mumbai" }
       }
     },
     include: { coordinator: true }
@@ -34,7 +34,7 @@ async function main() {
     await prisma.coordinator.create({
       data: {
         userId: adminUser.id,
-        agencyName: "ChildCare Admin",
+        agencyName: "BabyCare Admin",
         city: "Mumbai"
       }
     });
@@ -50,7 +50,7 @@ async function main() {
       password,
       roleId: ROLE_IDS.COORDINATOR,
       coordinator: {
-        create: { agencyName: "ChildCare Agency", city: "Mumbai" }
+        create: { agencyName: "BabyCare Agency", city: "Mumbai" }
       }
     },
     include: { coordinator: true }

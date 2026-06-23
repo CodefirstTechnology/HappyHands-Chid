@@ -1,8 +1,8 @@
-# ChildCare
+# BabyCare
 
-**ChildCare** is a childcare marketplace for India. Parents discover and book verified caregivers; coordinators onboard and verify caregivers; caregivers manage schedules, time tracking, and earnings through a dedicated mobile app.
+**BabyCare** is a baby care marketplace for India. Parents use the **BabyCare** app to discover and book verified nannies; nannies use **BabyCare Pro** to manage jobs, time tracking, and earnings; coordinators onboard and verify caregivers via the coordinator portal.
 
-This monorepo contains the full product stack: REST API, coordinator web portal, two Expo mobile apps (Parent + Caregiver), and production Docker deployment.
+This monorepo contains the full product stack: REST API, coordinator web portal, two Expo mobile apps (**BabyCare** for parents + **BabyCare Pro** for nannies), and production Docker deployment.
 
 ---
 
@@ -139,7 +139,7 @@ npm run dev                   # nodemon — or npm start for production mode
 ```
 
 **Health check:** `GET http://localhost:5000/health`  
-**API root:** `GET http://localhost:5000/` → `{ "success": true, "message": "ChildCare API Running" }`
+**API root:** `GET http://localhost:5000/` → `{ "success": true, "message": "BabyCare API Running" }`
 
 ### Default seeded accounts
 
@@ -323,9 +323,9 @@ Docker image is built via `Coordinator/onboarding-agent-web/Dockerfile` (nginx s
 
 ---
 
-## Parent app (mobile)
+## Parent app — BabyCare (mobile)
 
-Expo app for house owners to browse staff, request bookings, track live location, verify work-start OTP, and leave reviews.
+Expo app (**BabyCare**) for parents to browse nannies, request bookings, track live location, verify care-start OTP, and leave reviews.
 
 ### Stack
 
@@ -388,9 +388,9 @@ EXPO_PUBLIC_API_BASE_URL=https://api.yourdomain.com/api/v1
 
 ---
 
-## Caregiver app (mobile)
+## Nanny app — BabyCare Pro (mobile)
 
-Expo app for onboarded staff to view schedules, accept open area requests, track time, share live location, verify Aadhaar, and view earnings.
+Expo app (**BabyCare Pro** — *For Nannies & Caregivers*) for verified nannies to view schedules, accept open area requests, track time, share live location, and view earnings.
 
 ### Stack
 
@@ -537,7 +537,7 @@ See `Backend/.env.example` for the full list.
 
 ## Production deployment
 
-ChildCare runs as **five Docker containers**: PostgreSQL, Redis, API, marketing website, and agent portal. Containers bind to **localhost only** so your VPS nginx reverse-proxies alongside other apps.
+BabyCare runs as **five Docker containers**: PostgreSQL, Redis, API, marketing website, and agent portal. Containers bind to **localhost only** so your VPS nginx reverse-proxies alongside other apps.
 
 ### 1. Prepare the VPS
 

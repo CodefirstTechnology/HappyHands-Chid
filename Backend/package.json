@@ -1,7 +1,7 @@
 {
   "name": "childcare-backend",
   "version": "1.0.0",
-  "description": "ChildCare platform API — parents, caregivers, and coordinators",
+  "description": "BabyCare platform API — parents, nannies, and coordinators",
   "main": "index.js",
   "scripts": {
     "start": "node src/server.js",

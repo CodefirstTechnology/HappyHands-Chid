@@ -306,6 +306,7 @@ export default function ServantHomeScreen() {
           </View>
           <View style={styles.proText}>
             <Text style={styles.proBrand}>{t('common.appNamePro')}</Text>
+            <Text style={styles.proSubtitle}>{t('common.appSubtitle')}</Text>
             <View style={styles.nameRow}>
               <Text style={styles.proName}>
                 {t('servantHome.namaste', { name: user?.name?.split(' ')[0] || '' })}
@@ -654,6 +655,7 @@ const styles = StyleSheet.create({
   },
   proAvatarText: { fontSize: 20, fontWeight: '700', color: Stitch.colors.primary },
   proBrand: { fontSize: 12, fontWeight: '700', color: Stitch.colors.primary },
+  proSubtitle: { fontSize: 10, fontWeight: '600', color: Stitch.colors.onSurfaceVariant, marginTop: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 2 },
   proName: { fontSize: 16, fontWeight: '600' },
   online: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
