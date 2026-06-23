@@ -95,8 +95,6 @@ export default function LoginScreen() {
         <Link href="/(auth)/register" asChild>
           <Text style={styles.link}>{t('auth.newAccount')}</Text>
         </Link>
-
-        <Text style={styles.safe}>{t('auth.safeData')}</Text>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -149,12 +147,5 @@ const styles = StyleSheet.create({
     marginTop: 20,
     fontWeight: '600',
     fontSize: 15,
-  },
-  safe: {
-    ...Stitch.typography.caption,
-    color: Stitch.colors.onSurfaceVariant,
-    textAlign: 'center',
-    marginTop: 32,
-    opacity: 0.8,
   },
 });
