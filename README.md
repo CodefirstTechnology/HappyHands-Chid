@@ -29,8 +29,8 @@ This monorepo contains the full product stack: REST API, coordinator web portal,
 ```mermaid
 flowchart TB
   subgraph clients [Clients]
-    PA[Parent App<br/>Expo / Android / iOS]
-    CG[Caregiver App<br/>Expo / Android / iOS]
+    PA[BabyCare<br/>Expo / Android / iOS]
+    CG[BabyCare Pro<br/>Expo / Android / iOS]
     CO[Coordinator Portal<br/>React + Vite]
     WEB[Marketing Website<br/>React + Vite]
   end
@@ -94,12 +94,12 @@ flowchart TB
 ```
 childcare/
 ├── Backend/                    # REST API, Prisma schema, uploads
-├── Coordinator/
+├── Agent/
 │   └── onboarding-agent-web/   # Coordinator + admin web portal
-├── Parent App/
-│   └── house-owner-app/        # Expo app for customers
-├── Caregiver/
-│   └── servant-app/            # Expo app for staff
+├── BabyCare/
+│   └── babycare-app/           # Expo app for parents (BabyCare)
+├── BabyCarePro/
+│   └── babycare-pro-app/       # Expo app for caregivers (BabyCare Pro)
 ├── ChildCare_website/          # Marketing site (Docker)
 ├── deploy/
 │   ├── DEPLOY.md               # VPS deployment guide
@@ -113,9 +113,9 @@ childcare/
 | App | Path | Default dev URL |
 |-----|------|-----------------|
 | Backend API | `Backend/` | `http://localhost:5000/api/v1` |
-| Coordinator portal | `Coordinator/onboarding-agent-web/` | `http://localhost:5173` |
-| Parent app | `Parent App/house-owner-app/` | Expo dev server |
-| Caregiver app | `Caregiver/servant-app/` | Expo dev server |
+| Coordinator portal | `Agent/onboarding-agent-web/` | `http://localhost:5173` |
+| BabyCare (parent) | `BabyCare/babycare-app/` | Expo dev server |
+| BabyCare Pro (caregiver) | `BabyCarePro/babycare-pro-app/` | Expo dev server |
 
 ---
 
@@ -284,7 +284,7 @@ React SPA for field agents and platform admins to onboard servants, manage verif
 ### Local setup
 
 ```bash
-cd Coordinator/onboarding-agent-web
+cd Agent/onboarding-agent-web
 cp .env.example .env
 npm install
 npm run dev
@@ -320,13 +320,13 @@ npm run build    # Output in dist/
 npm run preview  # Local preview of production build
 ```
 
-Docker image is built via `Coordinator/onboarding-agent-web/Dockerfile` (nginx serves static files).
+Docker image is built via `Agent/onboarding-agent-web/Dockerfile` (nginx serves static files).
 
 ---
 
 ## Parent app — BabyCare (mobile)
 
-Expo app (**BabyCare**) for parents to browse nannies, request bookings, track live location, verify care-start OTP, and leave reviews.
+Expo app (**BabyCare** — for parents) to browse verified caregivers, book sessions or monthly contracts, track live location, verify care-start OTP, and leave reviews.
 
 ### Stack
 
@@ -341,7 +341,7 @@ Expo app (**BabyCare**) for parents to browse nannies, request bookings, track l
 ### Local setup
 
 ```bash
-cd "Parent App/house-owner-app"
+cd BabyCare/babycare-app
 cp .env.example .env
 npm install
 npx expo install
@@ -404,7 +404,7 @@ Same core as Parent app, plus:
 ### Local setup
 
 ```bash
-cd Caregiver/servant-app
+cd BabyCarePro/babycare-pro-app
 cp .env.example .env
 npm install
 npx expo install
@@ -518,7 +518,7 @@ For development, set `SMS_PROVIDER=log` and `SMS_ALLOW_DEV_OTP=true` — OTP app
 
 See `Backend/.env.example` for the full list.
 
-### Coordinator portal (`Coordinator/onboarding-agent-web/.env`)
+### Coordinator portal (`Agent/onboarding-agent-web/.env`)
 
 | Variable | Description |
 |----------|-------------|

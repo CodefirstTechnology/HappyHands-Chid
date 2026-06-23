@@ -40,7 +40,7 @@ Generate at **1024×1024 px** first, then export smaller sizes.
 **BabyCare (Parent app)**
 
 ```
-House Owner App/house-owner-app/assets/images/
+BabyCare/babycare-app/assets/images/
   icon.png
   android-icon-foreground.png
   android-icon-background.png
@@ -52,7 +52,7 @@ House Owner App/house-owner-app/assets/images/
 **BabyCare Pro (Nanny app)**
 
 ```
-Servant/servant-app/assets/images/
+BabyCarePro/babycare-pro-app/assets/images/
   icon.png
   android-icon-foreground.png
   android-icon-background.png
@@ -182,11 +182,11 @@ After replacing icons:
 
 ```bash
 # Parent app
-cd "House Owner App/house-owner-app"
+cd BabyCare/babycare-app
 npx expo start -c
 
 # Nanny app
-cd Servant/servant-app
+cd BabyCarePro/babycare-pro-app
 npx expo start -c
 ```
 
@@ -232,8 +232,8 @@ python scripts/install-brand-icons.py
 
 This writes all required sizes into:
 
-- `House Owner App/house-owner-app/assets/images/` (BabyCare)
-- `Servant/servant-app/assets/images/` (BabyCare Pro)
+- `BabyCare/babycare-app/assets/images/` (BabyCare)
+- `BabyCarePro/babycare-pro-app/assets/images/` (BabyCare Pro)
 
 Then clear Expo cache: `npx expo start -c`
 

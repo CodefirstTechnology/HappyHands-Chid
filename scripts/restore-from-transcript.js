@@ -20,6 +20,14 @@ const normalizePath = (p) => {
   const fixed = p.replace(/\\/g, "/");
   const idx = fixed.toLowerCase().indexOf("/staffera/");
   if (idx >= 0) return path.join(repoRoot, fixed.slice(idx + "/staffera/".length));
+  if (fixed.includes("BabyCarePro/babycare-pro-app")) {
+    const i = fixed.indexOf("BabyCarePro/babycare-pro-app");
+    return path.join(repoRoot, fixed.slice(i));
+  }
+  if (fixed.includes("BabyCare/babycare-app")) {
+    const i = fixed.indexOf("BabyCare/babycare-app");
+    return path.join(repoRoot, fixed.slice(i));
+  }
   if (fixed.includes("Servant/servant-app")) {
     const i = fixed.indexOf("Servant/servant-app");
     return path.join(repoRoot, fixed.slice(i));
@@ -52,7 +60,14 @@ for (const transcript of transcripts) {
       const { name, input = {} } = block;
       const target = normalizePath(input.path || "");
       if (!target) continue;
-      if (!target.includes("servant-app") && !target.includes("house-owner-app")) continue;
+      if (
+        !target.includes("babycare-pro-app") &&
+        !target.includes("babycare-app") &&
+        !target.includes("servant-app") &&
+        !target.includes("house-owner-app")
+      ) {
+        continue;
+      }
 
       if (name === "Write" && input.contents) {
         ops.push({ type: "write", target, contents: input.contents });
@@ -90,6 +105,8 @@ for (const [filePath, contents] of files) {
 // .env files (not in transcript — recreate)
 const envContent = "EXPO_PUBLIC_API_BASE_URL=http://192.168.0.243:5000/api/v1\n";
 for (const app of [
+  "BabyCarePro/babycare-pro-app/.env",
+  "BabyCare/babycare-app/.env",
   "Servant/servant-app/.env",
   "House Owner App/house-owner-app/.env"
 ]) {

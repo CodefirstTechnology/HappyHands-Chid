@@ -135,7 +135,7 @@ Mobile apps are **not** containerized. Before release builds, set:
 EXPO_PUBLIC_API_BASE_URL=https://api.yourdomain.com/api/v1
 ```
 
-Build via EAS from `House Owner App/house-owner-app` and `Servant/servant-app`.
+Build via EAS from `BabyCare/babycare-app` and `BabyCarePro/babycare-pro-app`.
 
 Update store links in `.env` (`VITE_PLAY_STORE_*`, `VITE_APP_STORE_*`) and redeploy the website container to show them on the landing page.
 

@@ -199,8 +199,8 @@ def main() -> None:
             raise FileNotFoundError(f"No brand file matching '{token}' in {files}")
         return matches[0]
 
-    parent_out = ROOT / "House Owner App" / "house-owner-app" / "assets" / "images"
-    nanny_out = ROOT / "Servant" / "servant-app" / "assets" / "images"
+    parent_out = ROOT / "BabyCare" / "babycare-app" / "assets" / "images"
+    nanny_out = ROOT / "BabyCarePro" / "babycare-pro-app" / "assets" / "images"
 
     process_app(
         label="BabyCare (Parent)",
