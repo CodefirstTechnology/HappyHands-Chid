@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BabyCare",
-    "slug": "childcare-parent-app",
+    "slug": "babycare",
     "owner": "pravinbehere45",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -56,7 +56,7 @@
       "googleMapId": "",
       "router": {},
       "eas": {
-        "projectId": "8da501d7-a1cd-45a9-a6c0-6e9c6a8937e9"
+        "projectId": "09939d0a-1583-4766-8d78-95a444158e34"
       }
     }
   }

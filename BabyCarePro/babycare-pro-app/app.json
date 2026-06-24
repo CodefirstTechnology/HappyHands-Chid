@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BabyCare Pro",
-    "slug": "childcare-caregiver-app",
+    "slug": "babycare-pro",
     "owner": "pravinbehere45",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -53,7 +53,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "0c4864b0-0f26-4ec6-aabe-64255b2a3032"
+        "projectId": "f048d049-cdbc-49ac-b91e-3f45167e2a01"
       }
     }
   }
